@@ -122,8 +122,10 @@ printf '%s\n' '[Service]' 'WatchdogSec=0' 'TimeoutStartSec=infinity' \
 # burrow-logs: what ended the desktop session, for a screenshot from the console.
 cat > /usr/local/bin/burrow-logs <<'SH'
 #!/bin/sh
+[ "$(id -u)" -eq 0 ] || { echo "burrow-logs needs root: su -  (password root)"; exit 1; }
 u=$(id -u uml)
 echo "== sessions"; loginctl list-sessions --no-legend
+echo "== sddm"; journalctl -b --no-pager -o cat -u sddm | tail -n "${1:-15}"
 echo "== failed user units"; systemctl --user -M uml@ --failed --no-legend 2>/dev/null
 echo "== coredumps"; coredumpctl list --no-pager --no-legend 2>/dev/null | tail -5
 echo "== wayland-session.log"; tail -n "${1:-15}" /home/uml/.local/share/sddm/wayland-session.log 2>/dev/null
