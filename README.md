@@ -54,7 +54,8 @@ entitlements. With Plume Impactor and a free Apple ID:
 
 On first launch the app clones the bundled image into Documents and boots
 it read-only beneath a writable overlay disk (`kernarium-overlay.ext4` in
-the app's Application Support, sparse, excluded from iCloud backups).
+the app's `Library/Guest`, sparse, excluded from iCloud backups; its path
+reaches the kernel command line, so it cannot contain a space).
 Everything written inside the guest (files, installed packages, settings)
 is kept on that disk across launches and app updates; patch 0006 has the
 app keep it and the boot's `/init` check and mount it instead of formatting

@@ -1,4 +1,4 @@
-From fbaf6c36fd55ec16a318332f52f05533f778d7ce Mon Sep 17 00:00:00 2001
+From 878aaaa4093c9341075877faac0466c1248edd1b Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Thu, 19 Nov 2026 20:20:33 -0300
 Subject: [PATCH 6/6] Keep the guest's writes across launches
@@ -12,17 +12,17 @@ asks for a fresh layer by creating /.uml-state/.uml-reset.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---
- Kernarium/Kernarium/ContentView.swift         | 45 ++++++++++------
- Kernarium/KernariumTests/KernariumTests.swift | 15 ++++--
- Kernarium/Runtime/KernariumRuntime.mm         |  3 ++
- tools/rootfs/boot-ramdisk/init                | 53 +++++++++++++++++--
- 4 files changed, 92 insertions(+), 24 deletions(-)
+ Kernarium/Kernarium/ContentView.swift         | 58 ++++++++++++++-----
+ Kernarium/KernariumTests/KernariumTests.swift | 15 +++--
+ Kernarium/Runtime/KernariumRuntime.mm         |  3 +
+ tools/rootfs/boot-ramdisk/init                | 53 +++++++++++++++--
+ 4 files changed, 105 insertions(+), 24 deletions(-)
 
 diff --git a/Kernarium/Kernarium/ContentView.swift b/Kernarium/Kernarium/ContentView.swift
-index 0cbb303..d4a258c 100644
+index 0cbb303..bf28f9d 100644
 --- a/Kernarium/Kernarium/ContentView.swift
 +++ b/Kernarium/Kernarium/ContentView.swift
-@@ -696,27 +696,42 @@ enum OverlayDisk {
+@@ -696,27 +696,55 @@ enum OverlayDisk {
          return UInt64(sizeGiB) * 1024 * 1024 * 1024
      }
  
@@ -30,29 +30,42 @@ index 0cbb303..d4a258c 100644
 -        sizeGiB: Int,
 -        in directory: URL = FileManager.default.temporaryDirectory
 -    ) throws -> URL {
-+    /// Berkut keeps the overlay disk in Application Support, out of iCloud
-+    /// backups, so the guest's writes survive a relaunch. A missing disk is
-+    /// created sparse at the requested size and a smaller one is grown to it;
-+    /// the boot's /init formats a blank disk and keeps (and resizes) an
-+    /// existing filesystem. The temporary-directory copy older builds left is
-+    /// removed.
++    /// Berkut keeps the overlay disk in Library/Guest, out of iCloud backups,
++    /// so the guest's writes survive a relaunch. A missing disk is created
++    /// sparse at the requested size and a smaller one is grown to it; the
++    /// boot's /init formats a blank disk and keeps (and resizes) an existing
++    /// filesystem. The path reaches the kernel command line (ubd1=), which UML
++    /// splits at spaces, so it must have none: not "Application Support".
++    /// Copies older builds left in the temporary directory or Application
++    /// Support are removed.
 +    static func prepare(sizeGiB: Int, in directory: URL? = nil) throws -> URL {
          let manager = FileManager.default
 -        let disk = directory.appendingPathComponent(filename)
-+        let directory = try directory ?? manager.url(
-+            for: .applicationSupportDirectory, in: .userDomainMask,
+-        let requestedByteCount = try byteCount(forSizeGiB: sizeGiB)
+-        if manager.fileExists(atPath: disk.path) {
+-            try manager.removeItem(at: disk)
++        let library = try manager.url(
++            for: .libraryDirectory, in: .userDomainMask,
 +            appropriateFor: nil, create: true
++        )
++        let directory = directory ?? library.appendingPathComponent("Guest")
++        try manager.createDirectory(
++            at: directory, withIntermediateDirectories: true
 +        )
 +        try? manager.removeItem(
 +            at: manager.temporaryDirectory.appendingPathComponent(filename)
 +        )
++        try? manager.removeItem(
++            at: library.appendingPathComponent("Application Support")
++                .appendingPathComponent(filename)
++        )
 +        var disk = directory.appendingPathComponent(filename)
-         let requestedByteCount = try byteCount(forSizeGiB: sizeGiB)
--        if manager.fileExists(atPath: disk.path) {
--            try manager.removeItem(at: disk)
--        }
++        guard disk.path.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else {
++            throw CocoaError(.fileWriteInvalidFileName)
+         }
 -        guard manager.createFile(atPath: disk.path, contents: nil) else {
 -            throw CocoaError(.fileWriteUnknown)
++        let requestedByteCount = try byteCount(forSizeGiB: sizeGiB)
 +        let created = !manager.fileExists(atPath: disk.path)
 +        if created {
 +            guard manager.createFile(atPath: disk.path, contents: nil) else {
@@ -77,7 +90,7 @@ index 0cbb303..d4a258c 100644
          return disk
      }
  }
-@@ -1126,8 +1141,8 @@ final class EmulatorLauncher: ObservableObject, SpaceRun {
+@@ -1126,8 +1154,8 @@ final class EmulatorLauncher: ObservableObject, SpaceRun {
          return run()
      }
  
@@ -88,7 +101,7 @@ index 0cbb303..d4a258c 100644
      private func prepareImageBoot(rootfs: URL) -> PreparedBoot? {
          if rootfs.pathExtension.lowercased() == "ext4" {
              do {
-@@ -1141,7 +1156,7 @@ final class EmulatorLauncher: ObservableObject, SpaceRun {
+@@ -1141,7 +1169,7 @@ final class EmulatorLauncher: ObservableObject, SpaceRun {
              }
          }
          do {
