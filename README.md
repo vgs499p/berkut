@@ -83,6 +83,15 @@ regenerate patch 0003 (`git format-patch`). The guest's hostname is in
   falls back to llvmpipe.
 - Without JIT everything runs on the interpreter, so Plasma is slow. The
   image turns off animations, effects, Baloo and session restore.
+- Do not build the image with `mkfs.erofs -T0`: SDDM ignores configuration
+  files dated at the epoch and falls back to X11 without autologin.
+- Patch 0005 gives the Linux guest the iPhone's battery (the kernel's
+  Kernarium Virtio battery driver, upstream Android-only); the mainline
+  kernel is published as release `ca2`. NetworkManager replaces
+  systemd-networkd so Plasma's indicator sees the (wired) SLiRP link.
+- Plasma's on-screen keyboard can mangle hidden password prompts; `uml`'s
+  password is `uml`. As root, `burrow-logs` shows why a session ended and
+  `burrow-session plasma|plasma-mobile` switches the desktop.
 
 ## License
 
