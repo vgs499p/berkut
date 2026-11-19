@@ -1,0 +1,37 @@
+From 0fdcff9ff835071c26d291e3c9248036bbff5966 Mon Sep 17 00:00:00 2001
+From: s1oplus <victorgarcez@proton.me>
+Date: Thu, 19 Nov 2026 18:02:01 -0300
+Subject: [PATCH 4/4] Replace the bundled image copy when its size or date
+ differs
+
+An updated image of the same block-rounded size would otherwise be kept.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Kernarium/Kernarium/EmulatorConfiguration.swift | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/Kernarium/Kernarium/EmulatorConfiguration.swift b/Kernarium/Kernarium/EmulatorConfiguration.swift
+index 30c0740..88032f5 100644
+--- a/Kernarium/Kernarium/EmulatorConfiguration.swift
++++ b/Kernarium/Kernarium/EmulatorConfiguration.swift
+@@ -416,11 +416,12 @@ enum RootfsImage {
+         // an updated image reaches the guest; the guest never writes to the
+         // image, so nothing of the user's is lost.
+         if fileManager.fileExists(atPath: destination.path) {
+-            func size(_ url: URL) -> Int64? {
+-                (try? fileManager.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?
+-                    .int64Value
++            // A clone keeps its source's size and modification date.
++            func identity(_ url: URL) -> [String] {
++                let attributes = (try? fileManager.attributesOfItem(atPath: url.path)) ?? [:]
++                return ["\(attributes[.size] ?? "")", "\(attributes[.modificationDate] ?? "")"]
+             }
+-            guard size(source) != size(destination) else { return }
++            guard identity(source) != identity(destination) else { return }
+             try? fileManager.removeItem(at: destination)
+         }
+         try? fileManager.copyItem(at: source, to: destination)
+-- 
+2.56.1
+

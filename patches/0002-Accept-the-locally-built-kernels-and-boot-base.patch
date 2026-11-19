@@ -1,0 +1,58 @@
+From 552a22eb2d37e6c48067641bf4981b3ac62ca36c Mon Sep 17 00:00:00 2001
+From: s1oplus <victorgarcez@proton.me>
+Date: Thu, 19 Nov 2026 18:00:59 -0300
+Subject: [PATCH 2/4] Accept the locally built kernels and boot base
+
+The kernels are built from the accepted final tree; their release string
+carries the local replay's commit. The boot base is rebuilt from Alpine's
+static BusyBox and e2fsprogs 1.47.2, since the starter release is not
+published, and passes verify_base.py.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ kernel/mainline-6.18/artifacts/accepted-4k.env         | 2 +-
+ kernel/mainline-6.18/artifacts/accepted-android-4k.env | 2 +-
+ tools/rootfs/boot-ramdisk/accepted-aarch64.env         | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/kernel/mainline-6.18/artifacts/accepted-4k.env b/kernel/mainline-6.18/artifacts/accepted-4k.env
+index a7ac2a7..ec4d643 100644
+--- a/kernel/mainline-6.18/artifacts/accepted-4k.env
++++ b/kernel/mainline-6.18/artifacts/accepted-4k.env
+@@ -4,7 +4,7 @@ UML_KERNEL_ARTIFACT_RELEASE_ID='20261119-6.18.60-ca1'
+ UML_KERNEL_ARTIFACT_DIRECTORY_NAME='mainline-6.18-arm64-4k-20261119-6.18.60-ca1'
+ UML_KERNEL_ARTIFACT_FAMILY='mainline-6.18'
+ UML_KERNEL_ARTIFACT_SLICE='arm64'
+-UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g0f1aac6de72d'
++UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g81c22bf24dd9'
+ UML_KERNEL_ARTIFACT_PAGE_SIZE=4096
+ UML_KERNEL_ARTIFACT_FINAL_TREE='ee913342fecf9f7f9836b616f5c605a036da0098'
+ UML_KERNEL_ARTIFACT_ABI_VERSION=29
+diff --git a/kernel/mainline-6.18/artifacts/accepted-android-4k.env b/kernel/mainline-6.18/artifacts/accepted-android-4k.env
+index 6c31dae..a5f62cd 100644
+--- a/kernel/mainline-6.18/artifacts/accepted-android-4k.env
++++ b/kernel/mainline-6.18/artifacts/accepted-android-4k.env
+@@ -4,7 +4,7 @@ UML_KERNEL_ARTIFACT_RELEASE_ID='20261119-6.18.60-ca1'
+ UML_KERNEL_ARTIFACT_DIRECTORY_NAME='android-6.18-arm64-4k-20261119-6.18.60-ca1'
+ UML_KERNEL_ARTIFACT_FAMILY='android-6.18'
+ UML_KERNEL_ARTIFACT_SLICE='arm64'
+-UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g0f1aac6de72d'
++UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g81c22bf24dd9'
+ UML_KERNEL_ARTIFACT_PAGE_SIZE=4096
+ UML_KERNEL_ARTIFACT_FINAL_TREE='ee913342fecf9f7f9836b616f5c605a036da0098'
+ UML_KERNEL_ARTIFACT_ABI_VERSION=29
+diff --git a/tools/rootfs/boot-ramdisk/accepted-aarch64.env b/tools/rootfs/boot-ramdisk/accepted-aarch64.env
+index e97e848..96bf1b3 100644
+--- a/tools/rootfs/boot-ramdisk/accepted-aarch64.env
++++ b/tools/rootfs/boot-ramdisk/accepted-aarch64.env
+@@ -3,5 +3,5 @@ UML_BOOT_BASE_SCHEMA=1
+ UML_BOOT_BASE_RELEASE='starter-20260928-boot-base-r1'
+ UML_BOOT_BASE_FILE='uml-boot-base-aarch64.cpio.gz'
+ UML_BOOT_BASE_ARCHITECTURE='aarch64'
+-UML_BOOT_BASE_SIZE=1398138
+-UML_BOOT_BASE_SHA256='5ee756a9a42f8ad6765d5950234357e9e10089be81205160cd41f3f44da7cf01'
++UML_BOOT_BASE_SIZE=1869004
++UML_BOOT_BASE_SHA256='5ad22bbcb96b3ff29251c85e5089487a58217ffd461797d063ed0984300e958d'
+-- 
+2.56.1
+

@@ -1,0 +1,5 @@
+*.ipa
+*.erofs
+*.erofs.tmp
+*.cpio.gz
+.DS_Store

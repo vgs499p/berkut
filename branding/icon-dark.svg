@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A2416"/>
+      <stop offset="0.55" stop-color="#24150C"/>
+      <stop offset="1" stop-color="#120A05"/>
+    </linearGradient>
+    <linearGradient id="hole" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A0E08"/>
+      <stop offset="1" stop-color="#2B170C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.62" r="0.45">
+      <stop offset="0" stop-color="#7CF7C4" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#7CF7C4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- ground strata -->
+  <path d="M0 800 C 220 760, 420 830, 620 790 S 900 770, 1024 800 L1024 1024 L0 1024Z" fill="#5E2B10" opacity="0.55"/>
+  <path d="M0 880 C 260 850, 520 910, 760 870 S 960 860, 1024 880 L1024 1024 L0 1024Z" fill="#3F1C0A" opacity="0.6"/>
+  <!-- burrow mouth -->
+  <path d="M232 820 L232 520 A280 280 0 0 1 792 520 L792 820 Z" fill="#4A2A16" opacity="0.6"/>
+  <path d="M272 820 L272 530 A240 240 0 0 1 752 530 L752 820 Z" fill="url(#hole)"/>
+  <ellipse cx="512" cy="640" rx="240" ry="200" fill="url(#glow)"/>
+  <!-- prompt -->
+  <path d="M392 560 L476 624 L392 688" fill="none" stroke="#7CF7C4" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="512" y="664" width="132" height="40" rx="20" fill="#7CF7C4"/>
+</svg>
