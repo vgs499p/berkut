@@ -1,23 +1,23 @@
-# Burrow
+# Berkut
 
-Arch Linux ARM with Plasma Mobile, running on an iPhone. Burrow is a build of
+Arch Linux ARM with Plasma Mobile, running on an iPhone. Berkut is a build of
 [Kernarium](https://github.com/imxieyi/Kernarium): a User-mode Linux kernel
 compiled to native arm64 and run inside an iOS app, with guest programs on an
 interpreter (or a JIT under StikDebug) and graphics through Virgl, Zink and
 KosmicKrisp to Metal.
 
-This repository holds only what Burrow adds. A build clones upstream
+This repository holds only what Berkut adds. A build clones upstream
 Kernarium at the commit in `upstream.env` and applies `patches/`.
 
 ## Layout
 
 ```text
-patches/        Burrow's commits on upstream Kernarium (git am)
+patches/        Berkut's commits on upstream Kernarium (git am)
 branding/       name, bundle identifier, icon sources and apply-branding.sh
 image/          Arch Linux ARM + Plasma image recipe (runs in a container)
 bootbase/       static BusyBox/e2fsprogs boot ramdisk recipe
 scripts/        setup and build steps, in order below
-Burrow.entitlements   the two memory entitlements the app needs
+Berkut.entitlements   the two memory entitlements the app needs
 ```
 
 ## Requirements
@@ -37,10 +37,10 @@ scripts/build-kernels.sh    # Linux and Android UML kernels (~45 min)
 scripts/build-boot-base.sh  # boot ramdisk, recorded in its descriptor
 scripts/build-app.sh        # iOS dependencies, runtimes, frameworks, app
 scripts/build-image.sh      # Arch Linux ARM + Plasma erofs image (~20 min)
-scripts/make-ipa.sh "$PWD/Burrow.ipa"
+scripts/make-ipa.sh "$PWD/Berkut.ipa"
 ```
 
-`BURROW_BUILD_ROOT` moves the build volume (default `/Volumes/BurrowBuild`).
+`BERKUT_BUILD_ROOT` moves the build volume (default `/Volumes/BerkutBuild`).
 Everything there is generated and can be thrown away.
 
 ## Installing
@@ -50,11 +50,20 @@ entitlements. With Plume Impactor and a free Apple ID:
 
 - set **Identifier** to an App ID the account already has, to stay under
   Apple's 10 App IDs per 7 days;
-- enable **Only Register Main Bundle** and add `Burrow.entitlements`.
+- enable **Only Register Main Bundle** and add `Berkut.entitlements`.
 
 On first launch the app clones the bundled image into Documents and boots
-it. Each launch starts the guest from the clean image; nothing written
-inside the guest survives a relaunch.
+it read-only beneath a writable overlay disk (`kernarium-overlay.ext4` in
+the app's Application Support, sparse, excluded from iCloud backups).
+Everything written inside the guest (files, installed packages, settings)
+is kept on that disk across launches and app updates; patch 0006 has the
+app keep it and the boot's `/init` check and mount it instead of formatting
+it. Raising the overlay size in Emulator settings grows the disk at the
+next launch; it never shrinks. As root, `berkut-reset` discards every change
+at the next launch, and deleting the app deletes the disk.
+
+A new image in an update sits beneath the existing overlay, so files the
+guest changed keep the guest's version.
 
 Accounts: `uml`/`uml` (desktop, sudo), `root`/`root`, `alarm`/`alarm`.
 
@@ -74,7 +83,7 @@ regenerate patch 0003 (`git format-patch`). The guest's hostname is in
 - Upstream never published the `starter-20260928-boot-base-r1` ramdisk;
   `bootbase/` rebuilds an equivalent that passes `verify_base.py`.
 - The Android runtime is built only because packaging and the Xcode project
-  require it; Burrow never boots Android.
+  require it; Berkut never boots Android.
 - Arch's SDDM needs `DisplayServer=wayland` (the image has no X server), and
   the Kernarium input devices need the udev rules from upstream's
   postmarketOS setup.
@@ -90,8 +99,10 @@ regenerate patch 0003 (`git format-patch`). The guest's hostname is in
   kernel is published as release `ca2`. NetworkManager replaces
   systemd-networkd so Plasma's indicator sees the (wired) SLiRP link.
 - Plasma's on-screen keyboard can mangle hidden password prompts; `uml`'s
-  password is `uml`. As root, `burrow-logs` shows why a session ended and
-  `burrow-session plasma|plasma-mobile` switches the desktop.
+  password is `uml`. As root, `berkut-logs` shows why a session ended and
+  `berkut-session plasma|plasma-mobile` switches the desktop.
+- Berkut was called Burrow before guest storage persisted. Signed with the
+  same Plume Identifier, Berkut installs over Burrow as an update.
 
 ## License
 

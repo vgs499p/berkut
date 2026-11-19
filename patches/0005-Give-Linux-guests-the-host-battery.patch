@@ -1,7 +1,7 @@
-From 87eca79dcf40f5780e88eae103c622fe20a5bd72 Mon Sep 17 00:00:00 2001
+From a24b53a0f06fc552a843d16b1c8c7beda631f074 Mon Sep 17 00:00:00 2001
 From: Burrow <burrow@localhost>
 Date: Thu, 19 Nov 2026 19:33:57 -0300
-Subject: [PATCH] Give Linux guests the host battery
+Subject: [PATCH 5/6] Give Linux guests the host battery
 
 Enable the power-supply class and the Kernarium Virtio battery driver in
 the mainline kernel, and attach the battery device for Linux guests as for
@@ -15,7 +15,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
  3 files changed, 10 insertions(+), 9 deletions(-)
 
 diff --git a/Kernarium/Runtime/KernariumRuntime.mm b/Kernarium/Runtime/KernariumRuntime.mm
-index 3aebcb7..60a02c9 100644
+index 3aebcb7..44d9f05 100644
 --- a/Kernarium/Runtime/KernariumRuntime.mm
 +++ b/Kernarium/Runtime/KernariumRuntime.mm
 @@ -1815,9 +1815,7 @@ private:
@@ -33,7 +33,7 @@ index 3aebcb7..60a02c9 100644
              boot->videoEncoder = uml::video::makeInProcessEncoderService(
                  sharedMemoryRegions_);
 -#if KERNARIUM_RUNTIME_ANDROID_GUEST
-+        /* Burrow: the Linux guest reads the host battery too. */
++        /* Berkut: the Linux guest reads the host battery too. */
          boot->battery = uml::battery::makeInProcessService();
 -#endif
          boot->console.emplace();
@@ -49,7 +49,7 @@ index 3aebcb7..60a02c9 100644
           * (android/lineage-24/overlay/sepolicy/vendor/genfs_contexts). Straight
           * after the GPU it is always virtio-uml.1/virtio1, whatever optional
 -         * devices follow. */
-+         * devices follow. Burrow attaches it for Linux guests as well. */
++         * devices follow. Berkut attaches it for Linux guests as well. */
          arguments.emplace_back(uml::gpu::virtioDeviceArgument(
              boot->battery->takeConnectionName(),
              uml::battery::protocol::deviceId));
@@ -72,7 +72,7 @@ index ec4d643..9fa31f6 100644
  UML_KERNEL_ARTIFACT_SLICE='arm64'
  UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g81c22bf24dd9'
 diff --git a/kernel/mainline-6.18/config/mainline.fragment b/kernel/mainline-6.18/config/mainline.fragment
-index 18852d6..53ef61b 100644
+index 18852d6..baf20cd 100644
 --- a/kernel/mainline-6.18/config/mainline.fragment
 +++ b/kernel/mainline-6.18/config/mainline.fragment
 @@ -56,3 +56,9 @@ CONFIG_POSIX_AUX_CLOCKS=y
@@ -80,7 +80,7 @@ index 18852d6..53ef61b 100644
  # android.fragment).
  # CONFIG_STATIC_USERMODEHELPER is not set
 +
-+# Burrow: the Apple host's battery, through the same Virtio device and
++# Berkut: the Apple host's battery, through the same Virtio device and
 +# power-supply driver as the Android product, for UPower and Plasma.
 +CONFIG_POWER_SUPPLY=y
 +# CONFIG_POWER_SUPPLY_HWMON is not set

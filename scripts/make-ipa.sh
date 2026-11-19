@@ -1,12 +1,12 @@
 #!/bin/sh
-# Assemble the Burrow IPA: the unsigned Release app, the Arch Linux
+# Assemble the Berkut IPA: the unsigned Release app, the Arch Linux
 # ARM KDE image as a bundle resource, ad-hoc signed with the app's
 # entitlements so a re-signing sideloader (Plume Impactor) carries them over.
 set -eu
-B=${BURROW_BUILD_ROOT:-/Volumes/BurrowBuild}
+B=${BERKUT_BUILD_ROOT:-/Volumes/BerkutBuild}
 APP=$B/DerivedData/Build/Products/Release-iphoneos/Kernarium.app
-IMG=${BURROW_IMAGE:-$B/arch/out/archlinuxarm-kde.erofs}
-ENT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)/Burrow.entitlements
+IMG=${BERKUT_IMAGE:-$B/arch/out/archlinuxarm-kde.erofs}
+ENT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)/Berkut.entitlements
 OUT=${1:?output ipa path}
 W=$B/ipa
 rm -rf "$W"; mkdir -p "$W/Payload"

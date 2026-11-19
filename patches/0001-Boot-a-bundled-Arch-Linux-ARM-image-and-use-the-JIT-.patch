@@ -1,7 +1,7 @@
 From 7f9886f1eb1e90d91bd9e076e52cd855ca971075 Mon Sep 17 00:00:00 2001
 From: s1oplus <victorgarcez@proton.me>
 Date: Thu, 19 Nov 2026 18:00:59 -0300
-Subject: [PATCH 1/4] Boot a bundled Arch Linux ARM image and use the JIT under
+Subject: [PATCH 1/6] Boot a bundled Arch Linux ARM image and use the JIT under
  StikDebug
 
 Clone the archlinuxarm-kde.erofs image the application bundle carries into

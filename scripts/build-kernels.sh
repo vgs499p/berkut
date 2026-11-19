@@ -2,7 +2,7 @@
 # Builds and publishes the Linux and Android UML kernels with Homebrew LLVM
 # (Apple clang lacks Linux 6.18's __counted_by support).
 set -eu
-B=${BURROW_BUILD_ROOT:-/Volumes/BurrowBuild}
+B=${BERKUT_BUILD_ROOT:-/Volumes/BerkutBuild}
 export UML_KERNEL_CC=/opt/homebrew/opt/llvm/bin/clang UML_KERNEL_LD=/opt/homebrew/opt/lld/bin/ld.lld
 cd $B/Kernarium
 L=.build/logs

@@ -1,7 +1,7 @@
 From 552a22eb2d37e6c48067641bf4981b3ac62ca36c Mon Sep 17 00:00:00 2001
 From: s1oplus <victorgarcez@proton.me>
 Date: Thu, 19 Nov 2026 18:00:59 -0300
-Subject: [PATCH 2/4] Accept the locally built kernels and boot base
+Subject: [PATCH 2/6] Accept the locally built kernels and boot base
 
 The kernels are built from the accepted final tree; their release string
 carries the local replay's commit. The boot base is rebuilt from Alpine's

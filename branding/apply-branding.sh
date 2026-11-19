@@ -1,5 +1,5 @@
 #!/bin/sh
-# Applies the Burrow name, bundle identifier and icon to a Kernarium checkout.
+# Applies the Berkut name, bundle identifier and icon to a Kernarium checkout.
 # Usage: apply-branding.sh /path/to/Kernarium-checkout
 set -eu
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -10,11 +10,11 @@ PBX="$K/Kernarium/Kernarium.xcodeproj/project.pbxproj"
 ICONS="$K/Kernarium/Kernarium/Assets.xcassets/AppIcon.appiconset"
 
 /usr/libexec/PlistBuddy -c "Delete :CFBundleDisplayName" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $BURROW_NAME" "$PLIST"
+/usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string $BERKUT_NAME" "$PLIST"
 mic=$(/usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$PLIST")
-/usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription $BURROW_NAME ${mic#Kernarium }" "$PLIST"
+/usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription $BERKUT_NAME ${mic#Kernarium }" "$PLIST"
 # Only the application target's identifier; the test targets keep theirs.
-sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = com.imxieyi.Kernarium;/PRODUCT_BUNDLE_IDENTIFIER = $BURROW_BUNDLE_ID;/" "$PBX"
+sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = com.imxieyi.Kernarium;/PRODUCT_BUNDLE_IDENTIFIER = $BERKUT_BUNDLE_ID;/" "$PBX"
 
 cp "$HERE/AppIcon.png" "$HERE/AppIcon-dark.png" "$HERE/AppIcon-tinted.png" "$ICONS/"
 python3 - "$ICONS/Contents.json" <<'PY'
@@ -31,4 +31,4 @@ for image in d["images"]:
 json.dump(d, open(p, "w"), indent=2)
 open(p, "a").write("\n")
 PY
-echo "Applied $BURROW_NAME ($BURROW_BUNDLE_ID) to $K"
+echo "Applied $BERKUT_NAME ($BERKUT_BUNDLE_ID) to $K"

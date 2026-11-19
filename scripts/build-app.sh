@@ -3,7 +3,7 @@
 # framework bundle and the unsigned Release application. Run after
 # build-kernels.sh and build-boot-base.sh.
 set -eu
-B=${BURROW_BUILD_ROOT:-/Volumes/BurrowBuild}
+B=${BERKUT_BUILD_ROOT:-/Volumes/BerkutBuild}
 K=$B/Kernarium
 cd "$K"
 L=.build/logs; mkdir -p $L

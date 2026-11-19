@@ -51,7 +51,7 @@ echo 'uml:uml' | chpasswd
 echo 'root:root' | chpasswd
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
-echo burrow > /etc/hostname
+echo berkut > /etc/hostname
 
 # Same desktop policy as tools/rootfs/desktop/setup/kde.
 systemctl mask getty@tty0.service getty@tty1.service
@@ -117,13 +117,13 @@ chown uml:uml /home/uml/.config/kwinrc /home/uml/.config/kdeglobals \
 # systemd's start deadlines and KWin's watchdog, which ends the session.
 install -d /etc/systemd/user.conf.d /etc/systemd/user/plasma-kwin_wayland.service.d
 printf '%s\n' '[Manager]' 'DefaultTimeoutStartSec=infinity' \
-	> /etc/systemd/user.conf.d/burrow.conf
+	> /etc/systemd/user.conf.d/berkut.conf
 printf '%s\n' '[Service]' 'WatchdogSec=0' 'TimeoutStartSec=infinity' \
-	> /etc/systemd/user/plasma-kwin_wayland.service.d/burrow.conf
-# burrow-logs: what ended the desktop session, for a screenshot from the console.
-cat > /usr/local/bin/burrow-logs <<'SH'
+	> /etc/systemd/user/plasma-kwin_wayland.service.d/berkut.conf
+# berkut-logs: what ended the desktop session, for a screenshot from the console.
+cat > /usr/local/bin/berkut-logs <<'SH'
 #!/bin/sh
-[ "$(id -u)" -eq 0 ] || { echo "burrow-logs needs root: su -  (password root)"; exit 1; }
+[ "$(id -u)" -eq 0 ] || { echo "berkut-logs needs root: su -  (password root)"; exit 1; }
 u=$(id -u uml)
 echo "== sessions"; loginctl list-sessions --no-legend
 echo "== sddm"; journalctl -b --no-pager -o cat -u sddm | tail -n "${1:-15}"
@@ -132,15 +132,27 @@ echo "== coredumps"; coredumpctl list --no-pager --no-legend 2>/dev/null | tail 
 echo "== wayland-session.log"; tail -n "${1:-15}" /home/uml/.local/share/sddm/wayland-session.log 2>/dev/null
 echo "== uml journal (errors)"; journalctl -b --no-pager -o short-monotonic _UID="$u" -p warning | tail -n "${1:-15}"
 SH
-# burrow-session plasma|plasma-mobile: switch the autologin session and restart it.
-cat > /usr/local/bin/burrow-session <<'SH'
+# berkut-session plasma|plasma-mobile: switch the autologin session and restart it.
+cat > /usr/local/bin/berkut-session <<'SH'
 #!/bin/sh
-case "$1" in plasma|plasma-mobile) ;; *) echo "usage: burrow-session plasma|plasma-mobile"; exit 2 ;; esac
+case "$1" in plasma|plasma-mobile) ;; *) echo "usage: berkut-session plasma|plasma-mobile"; exit 2 ;; esac
 sed -i "s/^Session=.*/Session=$1/" /etc/sddm.conf.d/uml-autologin.conf
 systemctl stop "user@$(id -u uml).service"
 systemctl restart sddm
 SH
-chmod 0755 /usr/local/bin/burrow-logs /usr/local/bin/burrow-session
+# berkut-reset: discard everything written in the guest at the next launch.
+cat > /usr/local/bin/berkut-reset <<'SH'
+#!/bin/sh
+[ "$(id -u)" -eq 0 ] || { echo "berkut-reset needs root: su -  (password root)"; exit 1; }
+[ -d /.uml-state ] || { echo "no writable layer at /.uml-state"; exit 1; }
+printf 'This erases every change made in the guest (files, packages, settings)\n'
+printf 'when Berkut next starts. Type yes to confirm: '
+read -r answer
+[ "$answer" = yes ] || { echo "Nothing changed."; exit 1; }
+touch /.uml-state/.uml-reset && sync
+echo "Done. Close Berkut (swipe it away) and open it again."
+SH
+chmod 0755 /usr/local/bin/berkut-logs /usr/local/bin/berkut-session /usr/local/bin/berkut-reset
 # Plasma and Qt expect a UTF-8 locale.
 sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
 locale-gen

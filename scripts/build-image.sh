@@ -2,7 +2,7 @@
 # Builds the Arch Linux ARM + Plasma Mobile erofs image in an arm64 container.
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-B=${BURROW_BUILD_ROOT:-/Volumes/BurrowBuild}
+B=${BERKUT_BUILD_ROOT:-/Volumes/BerkutBuild}
 mkdir -p "$B/arch/out"
 cp "$REPO/image/build-arch-image.sh" "$B/arch/"
 [ -f "$B/arch/ArchLinuxARM-aarch64-latest.tar.gz" ] ||

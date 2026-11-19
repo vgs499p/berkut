@@ -4,7 +4,7 @@
 # accepted descriptor, then runs upstream's verifier.
 set -eu
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-B=${BURROW_BUILD_ROOT:-/Volumes/BurrowBuild}
+B=${BERKUT_BUILD_ROOT:-/Volumes/BerkutBuild}
 K=$B/Kernarium
 cp "$REPO/bootbase/build-boot-base.sh" "$B/bootbase/make.sh"
 container run --rm --arch arm64 -c 6 -v "$B/bootbase:/out" docker.io/library/alpine:3.22 sh /out/make.sh

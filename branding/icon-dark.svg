@@ -18,7 +18,7 @@
   <!-- ground strata -->
   <path d="M0 800 C 220 760, 420 830, 620 790 S 900 770, 1024 800 L1024 1024 L0 1024Z" fill="#5E2B10" opacity="0.55"/>
   <path d="M0 880 C 260 850, 520 910, 760 870 S 960 860, 1024 880 L1024 1024 L0 1024Z" fill="#3F1C0A" opacity="0.6"/>
-  <!-- burrow mouth -->
+  <!-- tunnel mouth -->
   <path d="M232 820 L232 520 A280 280 0 0 1 792 520 L792 820 Z" fill="#4A2A16" opacity="0.6"/>
   <path d="M272 820 L272 530 A240 240 0 0 1 752 530 L752 820 Z" fill="url(#hole)"/>
   <ellipse cx="512" cy="640" rx="240" ry="200" fill="url(#glow)"/>
