@@ -1,6 +1,39 @@
-# Berkut
+<p align="center">
+  <img src="branding/logo.png" width="160" alt="Berkut icon: a Su-47 Berkut seen from above">
+</p>
 
-Arch Linux ARM with Plasma Mobile, running on an iPhone. Berkut is a build of
+<h1 align="center">Berkut</h1>
+
+<p align="center">
+  <b>Arch Linux ARM with Plasma Mobile, running on an iPhone.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/vgs499p/berkut/releases/latest"><img src="https://img.shields.io/github/v/release/vgs499p/berkut?label=download&color=3A6EA6" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/iOS-27%2B-1F3D66" alt="iOS 27 or later">
+  <img src="https://img.shields.io/badge/desktop-Plasma%20Mobile-1D99F3" alt="Plasma Mobile">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-2A2E33" alt="GPL-2.0-or-later"></a>
+</p>
+
+## Download
+
+Get `Berkut.ipa` and `Berkut.entitlements` from the
+[latest release](https://github.com/vgs499p/berkut/releases/latest) and
+sideload them (see [Installing](#installing)). Highlights:
+
+- boots straight into Plasma Mobile on the iPhone's GPU (Virgl → Zink →
+  KosmicKrisp → Metal);
+- everything written in the guest persists across launches;
+- the iPhone's battery shows in Plasma, and NetworkManager shows the
+  connection;
+- `berkut-logs`, `berkut-session` and `berkut-reset` for when things go wrong.
+
+Without a JIT (StikDebug) the guest runs on an interpreter, so expect it to
+be slow.
+
+## About
+
+Berkut is a build of
 [Kernarium](https://github.com/imxieyi/Kernarium): a User-mode Linux kernel
 compiled to native arm64 and run inside an iOS app, with guest programs on an
 interpreter (or a JIT under StikDebug) and graphics through Virgl, Zink and
@@ -13,7 +46,7 @@ Kernarium at the commit in `upstream.env` and applies `patches/`.
 
 ```text
 patches/        Berkut's commits on upstream Kernarium (git am)
-branding/       name, bundle identifier, icon sources and apply-branding.sh
+branding/       name, bundle identifier, icons (make-icon.py), logo, apply-branding.sh
 image/          Arch Linux ARM + Plasma image recipe (runs in a container)
 bootbase/       static BusyBox/e2fsprogs boot ramdisk recipe
 scripts/        setup and build steps, in order below
