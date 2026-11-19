@@ -1,4 +1,4 @@
-From 15944a37f0eb03a8effed1e68dc913013c64c0f3 Mon Sep 17 00:00:00 2001
+From f5212c67298cc38aa058a33f24217c88538afc5d Mon Sep 17 00:00:00 2001
 From: Burrow <burrow@localhost>
 Date: Thu, 19 Nov 2026 19:33:57 -0300
 Subject: [PATCH 5/6] Give Linux guests the host battery

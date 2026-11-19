@@ -69,7 +69,7 @@ Accounts: `uml`/`uml` (desktop, sudo), `root`/`root`, `alarm`/`alarm`.
 
 ## Branding
 
-Edit `branding/branding.env` or replace the PNGs (1024×1024: light, dark,
+Edit `branding/branding.env`, or redraw the icon with `branding/make-icon.py` and render the PNGs (1024×1024: light, dark,
 tinted), then run `branding/apply-branding.sh` on the checkout and
 regenerate patch 0003 (`git format-patch`). The guest's hostname is in
 `image/build-arch-image.sh`.
