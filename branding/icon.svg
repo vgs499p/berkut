@@ -1,28 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+  <!-- Berkut: a Su-47 seen from above, nose up, on a dusk sky. The right half
+       is drawn once and mirrored. Colours: BG_TOP, BG_MID, BG_BOTTOM, BODY,
+       SHADE, CANOPY (apply-icons.sh swaps them for the dark and tinted icons). -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E9A35A"/>
-      <stop offset="0.55" stop-color="#C46A2B"/>
-      <stop offset="1" stop-color="#7A3A16"/>
+      <stop offset="0" stop-color="#3B6EA8"/>
+      <stop offset="0.6" stop-color="#1F3D66"/>
+      <stop offset="1" stop-color="#0E1C33"/>
     </linearGradient>
-    <linearGradient id="hole" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1A0E08"/>
-      <stop offset="1" stop-color="#2B170C"/>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F2F5F8"/>
+      <stop offset="1" stop-color="#C9D2DC"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.62" r="0.45">
-      <stop offset="0" stop-color="#7CF7C4" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#7CF7C4" stop-opacity="0"/>
-    </radialGradient>
+    <g id="half">
+      <!-- forward-swept wing: broad root, tip well ahead of the root -->
+      <path d="M572 560 L822 492 Q850 486 854 512 L860 560 Q862 578 846 586 L580 800 Z" fill="url(#metal)"/>
+      <!-- canard -->
+      <path d="M566 400 L690 448 Q702 454 696 468 L572 470 Z" fill="url(#metal)"/>
+      <!-- tailplane -->
+      <path d="M582 792 L688 836 Q700 842 692 856 L584 856 Z" fill="url(#metal)"/>
+      <!-- fuselage: nose, cockpit, wide intakes and flat engine body -->
+      <path d="M512 120 C 528 180, 540 250, 548 320 L 580 392 L 590 560 L 588 812 L 566 852 L 512 852 Z" fill="url(#metal)"/>
+      <!-- leading-edge extension from canard to wing -->
+      <path d="M578 466 Q 606 512, 612 552 L 586 566 Z" fill="url(#metal)"/>
+      <!-- canted fin, seen edge-on from above -->
+      <path d="M586 690 L620 664 L628 812 L592 824 Z" fill="#A9B5C2"/>
+      <!-- engine nozzle and the tail stinger -->
+      <path d="M534 852 L566 852 L562 880 L538 880 Z" fill="#8995A3"/>
+      <path d="M512 852 L526 852 L524 924 L512 934 Z" fill="url(#metal)"/>
+      <!-- wing root shading -->
+      <path d="M580 600 L650 560 L640 752 L582 790 Z" fill="#B7C2CE" opacity="0.55"/>
+    </g>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
-  <!-- ground strata -->
-  <path d="M0 800 C 220 760, 420 830, 620 790 S 900 770, 1024 800 L1024 1024 L0 1024Z" fill="#5E2B10" opacity="0.55"/>
-  <path d="M0 880 C 260 850, 520 910, 760 870 S 960 860, 1024 880 L1024 1024 L0 1024Z" fill="#3F1C0A" opacity="0.6"/>
-  <!-- tunnel mouth -->
-  <path d="M232 820 L232 520 A280 280 0 0 1 792 520 L792 820 Z" fill="#8A4519" opacity="0.6"/>
-  <path d="M272 820 L272 530 A240 240 0 0 1 752 530 L752 820 Z" fill="url(#hole)"/>
-  <ellipse cx="512" cy="640" rx="240" ry="200" fill="url(#glow)"/>
-  <!-- prompt -->
-  <path d="M392 560 L476 624 L392 688" fill="none" stroke="#7CF7C4" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="512" y="664" width="132" height="40" rx="20" fill="#7CF7C4"/>
+  <use xlink:href="#half"/>
+  <use xlink:href="#half" transform="translate(1024 0) scale(-1 1)"/>
+  <!-- canopy -->
+  <path d="M512 236 C 528 258, 532 300, 526 340 L 512 356 L 498 340 C 492 300, 496 258, 512 236 Z" fill="#7CF7C4"/>
 </svg>
