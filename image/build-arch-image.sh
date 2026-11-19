@@ -168,7 +168,9 @@ ln -sfn /run/systemd/resolve/stub-resolv.conf "$R/etc/resolv.conf"
 umount -l "$R/dev" "$R/proc" "$R/sys" "$R/run" "$R/tmp" || true
 umount -l "$R" || true
 du -sh "$R"
-mkfs.erofs -zlz4hc,12 -Eztailpacking -T0 \
+# Keep real modification times: SDDM ignores configuration files stamped at
+# the epoch, which -T0 would do, and falls back to X11 without autologin.
+mkfs.erofs -zlz4hc,12 -Eztailpacking \
 	/out/archlinuxarm-kde.erofs.tmp "$R" ||
 	mkfs.erofs -zlz4hc,12 /out/archlinuxarm-kde.erofs.tmp "$R"
 mv /out/archlinuxarm-kde.erofs.tmp /out/archlinuxarm-kde.erofs
