@@ -18,7 +18,7 @@ kernel/mainline-6.18/build/build-kernel.sh --slice arm64 --build $B/build-arm64 
 echo kernel-ok
 kernel/mainline-6.18/build/publish-artifact.py --source $B/linux \
 	--build $B/build-arm64 --output-root "$OUT" \
-	--release-id 20261119-6.18.60-ca1 --objcopy "$OBJ" > $L/kpublish.log 2>&1
+	--release-id 20261119-6.18.60-ca2 --objcopy "$OBJ" > $L/kpublish.log 2>&1
 echo publish-ok
 kernel/mainline-6.18/build/build-kernel.sh --product android --build $B/build-android > $L/kernel-android.log 2>&1
 echo android-kernel-ok
@@ -29,10 +29,11 @@ echo android-publish-ok
 ls "$OUT"
 # The release string carries the local replay's commit, which differs per
 # checkout: point the accepted descriptors at what was just built.
-for pair in "mainline-6.18:accepted-4k.env" "android-6.18:accepted-android-4k.env"; do
-	family=${pair%%:*} env=kernel/mainline-6.18/artifacts/${pair##*:}
+for pair in "mainline-6.18:accepted-4k.env:ca2" "android-6.18:accepted-android-4k.env:ca1"; do
+	family=${pair%%:*} rest=${pair#*:} env=kernel/mainline-6.18/artifacts/${rest%%:*}
+	id=20261119-6.18.60-${rest##*:}
 	release=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['release'])" \
-		"$OUT/$family-arm64-4k-20261119-6.18.60-ca1/kernel-artifact.json")
+		"$OUT/$family-arm64-4k-$id/kernel-artifact.json")
 	sed -i '' "s/^UML_KERNEL_ARTIFACT_RELEASE=.*/UML_KERNEL_ARTIFACT_RELEASE='$release'/" "$env"
 	echo "$env -> $release"
 done

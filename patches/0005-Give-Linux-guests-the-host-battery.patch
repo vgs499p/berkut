@@ -1,0 +1,90 @@
+From 87eca79dcf40f5780e88eae103c622fe20a5bd72 Mon Sep 17 00:00:00 2001
+From: Burrow <burrow@localhost>
+Date: Thu, 19 Nov 2026 19:33:57 -0300
+Subject: [PATCH] Give Linux guests the host battery
+
+Enable the power-supply class and the Kernarium Virtio battery driver in
+the mainline kernel, and attach the battery device for Linux guests as for
+Android. The mainline kernel's release ID moves to 20261119-6.18.60-ca2.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Kernarium/Runtime/KernariumRuntime.mm          | 9 ++-------
+ kernel/mainline-6.18/artifacts/accepted-4k.env | 4 ++--
+ kernel/mainline-6.18/config/mainline.fragment  | 6 ++++++
+ 3 files changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/Kernarium/Runtime/KernariumRuntime.mm b/Kernarium/Runtime/KernariumRuntime.mm
+index 3aebcb7..60a02c9 100644
+--- a/Kernarium/Runtime/KernariumRuntime.mm
++++ b/Kernarium/Runtime/KernariumRuntime.mm
+@@ -1815,9 +1815,7 @@ private:
+         std::unique_ptr<uml::gpu::InProcessVhostUserService> audio;
+         std::unique_ptr<uml::gpu::InProcessVhostUserService> video;
+         std::unique_ptr<uml::gpu::InProcessVhostUserService> videoEncoder;
+-#if KERNARIUM_RUNTIME_ANDROID_GUEST
+         std::unique_ptr<uml::gpu::InProcessVhostUserService> battery;
+-#endif
+         /* The vsock device, after every device that existed before it. */
+         std::optional<uml::vsock::InProcessService> vsock;
+ #if KERNARIUM_RUNTIME_ANDROID_GUEST
+@@ -1866,9 +1864,8 @@ private:
+         if (!uml::platform::videoEncodeCapabilities().empty())
+             boot->videoEncoder = uml::video::makeInProcessEncoderService(
+                 sharedMemoryRegions_);
+-#if KERNARIUM_RUNTIME_ANDROID_GUEST
++        /* Burrow: the Linux guest reads the host battery too. */
+         boot->battery = uml::battery::makeInProcessService();
+-#endif
+         boot->console.emplace();
+ 
+         auto& arguments = boot->arguments;
+@@ -1915,16 +1912,14 @@ private:
+         arguments.emplace_back(uml::gpu::virtioDeviceArgument(
+             gpu_.takeConnectionName(),
+             uml::gpu::protocol::virtioGpuDeviceId));
+-#if KERNARIUM_RUNTIME_ANDROID_GUEST
+         /* Android's vendor policy labels the battery's sysfs path by its
+          * position among the Virtio devices
+          * (android/lineage-24/overlay/sepolicy/vendor/genfs_contexts). Straight
+          * after the GPU it is always virtio-uml.1/virtio1, whatever optional
+-         * devices follow. */
++         * devices follow. Burrow attaches it for Linux guests as well. */
+         arguments.emplace_back(uml::gpu::virtioDeviceArgument(
+             boot->battery->takeConnectionName(),
+             uml::battery::protocol::deviceId));
+-#endif
+         arguments.emplace_back(uml::gpu::virtioDeviceArgument(
+             boot->touchscreen->takeConnectionName(),
+             uml::input::virtio::protocol::deviceId));
+diff --git a/kernel/mainline-6.18/artifacts/accepted-4k.env b/kernel/mainline-6.18/artifacts/accepted-4k.env
+index ec4d643..9fa31f6 100644
+--- a/kernel/mainline-6.18/artifacts/accepted-4k.env
++++ b/kernel/mainline-6.18/artifacts/accepted-4k.env
+@@ -1,7 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0-or-later
+ UML_KERNEL_ARTIFACT_SCHEMA=3
+-UML_KERNEL_ARTIFACT_RELEASE_ID='20261119-6.18.60-ca1'
+-UML_KERNEL_ARTIFACT_DIRECTORY_NAME='mainline-6.18-arm64-4k-20261119-6.18.60-ca1'
++UML_KERNEL_ARTIFACT_RELEASE_ID='20261119-6.18.60-ca2'
++UML_KERNEL_ARTIFACT_DIRECTORY_NAME='mainline-6.18-arm64-4k-20261119-6.18.60-ca2'
+ UML_KERNEL_ARTIFACT_FAMILY='mainline-6.18'
+ UML_KERNEL_ARTIFACT_SLICE='arm64'
+ UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g81c22bf24dd9'
+diff --git a/kernel/mainline-6.18/config/mainline.fragment b/kernel/mainline-6.18/config/mainline.fragment
+index 18852d6..53ef61b 100644
+--- a/kernel/mainline-6.18/config/mainline.fragment
++++ b/kernel/mainline-6.18/config/mainline.fragment
+@@ -56,3 +56,9 @@ CONFIG_POSIX_AUX_CLOCKS=y
+ # product, which has none of these, gives every helper an empty path (see
+ # android.fragment).
+ # CONFIG_STATIC_USERMODEHELPER is not set
++
++# Burrow: the Apple host's battery, through the same Virtio device and
++# power-supply driver as the Android product, for UPower and Plasma.
++CONFIG_POWER_SUPPLY=y
++# CONFIG_POWER_SUPPLY_HWMON is not set
++CONFIG_KERNARIUM_VIRTIO_BATTERY=y
+-- 
+2.56.1
+

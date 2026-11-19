@@ -38,7 +38,8 @@ pacman -S --noconfirm --needed \
 	mesa vulkan-virtio vulkan-tools mesa-utils \
 	pipewire pipewire-pulse wireplumber \
 	noto-fonts noto-fonts-emoji ttf-dejavu \
-	firefox sudo nano htop fastfetch xorg-xwayland
+	firefox sudo nano htop fastfetch xorg-xwayland \
+	networkmanager upower
 # Plasma Mobile as an alternate session, when the repository carries it.
 pacman -S --noconfirm --needed plasma-mobile
 test -f /usr/share/wayland-sessions/plasma-mobile.desktop
@@ -148,8 +149,11 @@ printf '%s\n' '[Daemon]' 'Autolock=false' 'LockOnResume=false' 'Timeout=0' \
 	> /home/uml/.config/kscreenlockerrc
 chown uml:uml /home/uml/.config/kscreenlockerrc
 
-# Network: Arch Linux ARM's tarball ships systemd-networkd DHCP on en*/eth*.
-systemctl enable systemd-networkd.service systemd-resolved.service
+# Network: NetworkManager, which Plasma's network indicator reads, in place of
+# the systemd-networkd DHCP Arch Linux ARM's tarball ships; resolved stays the
+# resolver. The SLiRP link appears as a wired connection.
+systemctl disable systemd-networkd.service systemd-networkd.socket || true
+systemctl enable NetworkManager.service systemd-resolved.service
 systemctl set-default graphical.target
 
 # Every guest makes its own machine ID at first boot.
