@@ -1,4 +1,4 @@
-From 43f4ae19feebecf6a083a540c023fd30eee1cb6f Mon Sep 17 00:00:00 2001
+From 894e13f6e0654927a7e880f1c1a869f15d02c13c Mon Sep 17 00:00:00 2001
 From: s1oplus <victorgarcez@proton.me>
 Date: Thu, 19 Nov 2026 18:02:01 -0300
 Subject: [PATCH 4/6] Replace the bundled image copy when its size or date

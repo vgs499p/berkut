@@ -1,40 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
-  <!-- Berkut: a Su-47 seen from above, nose up, on a dusk sky. The right half
-       is drawn once and mirrored. Colours: BG_TOP, BG_MID, BG_BOTTOM, BODY,
-       SHADE, CANOPY (apply-icons.sh swaps them for the dark and tinted icons). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Berkut: a Su-47 in side profile, nose right, climbing, as one flat
+       silhouette on a dusk sky. Colours: #000000 #000000 #000000 sky,
+       #FFFFFF silhouette (swapped for the dark and tinted icons). -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#000000"/>
       <stop offset="0.6" stop-color="#000000"/>
       <stop offset="1" stop-color="#000000"/>
     </linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#E6E6E6"/>
-    </linearGradient>
-    <g id="half">
-      <!-- forward-swept wing: broad root, tip well ahead of the root -->
-      <path d="M572 560 L822 492 Q850 486 854 512 L860 560 Q862 578 846 586 L580 800 Z" fill="url(#metal)"/>
-      <!-- canard -->
-      <path d="M566 400 L690 448 Q702 454 696 468 L572 470 Z" fill="url(#metal)"/>
-      <!-- tailplane -->
-      <path d="M582 792 L688 836 Q700 842 692 856 L584 856 Z" fill="url(#metal)"/>
-      <!-- fuselage: nose, cockpit, wide intakes and flat engine body -->
-      <path d="M512 120 C 528 180, 540 250, 548 320 L 580 392 L 590 560 L 588 812 L 566 852 L 512 852 Z" fill="url(#metal)"/>
-      <!-- leading-edge extension from canard to wing -->
-      <path d="M578 466 Q 606 512, 612 552 L 586 566 Z" fill="url(#metal)"/>
-      <!-- canted fin, seen edge-on from above -->
-      <path d="M586 690 L620 664 L628 812 L592 824 Z" fill="#B0B0B0"/>
-      <!-- engine nozzle and the tail stinger -->
-      <path d="M534 852 L566 852 L562 880 L538 880 Z" fill="#8C8C8C"/>
-      <path d="M512 852 L526 852 L524 924 L512 934 Z" fill="url(#metal)"/>
-      <!-- wing root shading -->
-      <path d="M580 600 L650 560 L640 752 L582 790 Z" fill="#C8C8C8" opacity="0.55"/>
-    </g>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
-  <use xlink:href="#half"/>
-  <use xlink:href="#half" transform="translate(1024 0) scale(-1 1)"/>
-  <!-- canopy -->
-  <path d="M512 236 C 528 258, 532 300, 526 340 L 512 356 L 498 340 C 492 300, 496 258, 512 236 Z" fill="#6E6E6E"/>
+  <g transform="rotate(-10 512 512)" fill="#FFFFFF">
+    <!-- fuselage: drooped nose, bubble canopy, spine, stinger, belly, intake -->
+    <path d="M944 528
+             C 910 518, 870 508, 830 502
+             C 812 482, 782 470, 752 470
+             C 724 470, 700 480, 676 490
+             L 560 494
+             L 380 496
+             L 220 500
+             L 150 506
+             L 104 516
+             L 150 524
+             L 236 530
+             L 238 572
+             L 300 582
+             L 430 594
+             L 600 600
+             L 640 572
+             L 700 562
+             C 800 552, 890 540, 944 528 Z"/>
+    <!-- pitot boom -->
+    <path d="M940 524 L 992 520 L 992 526 L 940 532 Z"/>
+    <!-- canard -->
+    <path d="M690 500 L 590 474 L 608 512 Z"/>
+    <!-- twin canted tails: near fin and the far one just behind it -->
+    <path d="M392 496 L 296 336 L 252 334 L 262 498 Z"/>
+    <path d="M352 494 L 264 360 L 226 358 L 232 500 Z" opacity="0.75"/>
+    <!-- tailplane and forward-swept wing edge-on -->
+    <path d="M300 540 L 196 548 L 204 560 L 310 556 Z"/>
+    <path d="M560 540 L 400 556 L 404 566 L 566 552 Z"/>
+    <!-- engine nozzle -->
+    <path d="M240 532 L 214 536 L 214 562 L 240 566 Z"/>
+  </g>
 </svg>
