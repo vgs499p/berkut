@@ -1,6 +1,6 @@
-From 7d25e124526ebd96365614a5b44413b89ef016ab Mon Sep 17 00:00:00 2001
-From: Berkut <berkut@localhost>
-Date: Thu, 19 Nov 2026 19:58:05 -0300
+From fbaf6c36fd55ec16a318332f52f05533f778d7ce Mon Sep 17 00:00:00 2001
+From: vgs499p <vgs499p@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 20:20:33 -0300
 Subject: [PATCH 6/6] Keep the guest's writes across launches
 
 The application keeps the overlay disk in Application Support (excluded

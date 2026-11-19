@@ -1,6 +1,6 @@
-From f5212c67298cc38aa058a33f24217c88538afc5d Mon Sep 17 00:00:00 2001
-From: Burrow <burrow@localhost>
-Date: Thu, 19 Nov 2026 19:33:57 -0300
+From 1d692cdbde7a53fc5a25fdead638625872c0a321 Mon Sep 17 00:00:00 2001
+From: vgs499p <vgs499p@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 20:20:33 -0300
 Subject: [PATCH 5/6] Give Linux guests the host battery
 
 Enable the power-supply class and the Kernarium Virtio battery driver in

@@ -109,3 +109,12 @@ regenerate patch 0003 (`git format-patch`). The guest's hostname is in
 GPL-2.0-or-later, as upstream Kernarium (`LICENSE`). Anyone you give the IPA
 to is entitled to its source: this repository plus upstream at the pinned
 commit.
+
+The guest image in the IPA is built from unmodified Arch Linux ARM packages
+(the list is in `image/build-arch-image.sh`), each under its own license.
+Their sources are those of Arch Linux ARM
+(<https://github.com/archlinuxarm/PKGBUILDs>) and of the Arch Linux packages
+it builds on (<https://gitlab.archlinux.org/archlinux/packaging/packages>).
+
+Berkut is an independent build and is not affiliated with Kernarium's
+author, Arch Linux ARM, KDE or Sukhoi.

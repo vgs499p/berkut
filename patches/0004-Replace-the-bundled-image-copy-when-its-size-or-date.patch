@@ -1,6 +1,6 @@
-From 7da09ae899b105269183a90b1d088cd87975df95 Mon Sep 17 00:00:00 2001
-From: s1oplus <victorgarcez@proton.me>
-Date: Thu, 19 Nov 2026 18:02:01 -0300
+From ca6b29badaaf27cc836400f23c1a802abfdf3fa4 Mon Sep 17 00:00:00 2001
+From: vgs499p <vgs499p@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 20:20:33 -0300
 Subject: [PATCH 4/6] Replace the bundled image copy when its size or date
  differs
 
