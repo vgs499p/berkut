@@ -37,6 +37,15 @@ if [ -e /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf ]; then
 	: > /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
 fi
 
+# The guest always has Berkut's keyboard device, so the Stevia on-screen
+# keyboard would take a hardware keyboard to be in use and never appear.
+schemas=/usr/share/glib-2.0/schemas
+if [ -e "$schemas/mobi.phosh.osk.gschema.xml" ]; then
+	printf '%s\n' '[mobi.phosh.osk]' 'ignore-hw-keyboards=true' > "$schemas/90_berkut.gschema.override"
+	compile=$(command -v glib-compile-schemas || echo /usr/lib/aarch64-linux-gnu/glib-2.0/glib-compile-schemas)
+	"$compile" "$schemas"
+fi
+
 # Slow-machine defaults, copied into the home directory at first boot.
 case $DE in
 plasma|plasma-mobile)

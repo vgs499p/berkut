@@ -49,6 +49,8 @@ ln -sfn /run/systemd/resolve/stub-resolv.conf "$R/etc/resolv.conf"
 chroot "$R" /bin/sh -c 'test -x /sbin/init'
 chroot "$R" /bin/sh -c 'f=/etc/X11/default-display-manager; [ ! -e $f ] || grep -qx /usr/bin/sddm $f'
 chroot "$R" /bin/sh -c 'set -- $(ls /usr/share/wayland-sessions/*.desktop /usr/share/xsessions/*.desktop 2>/dev/null); [ $# = 1 ]'
+chroot "$R" /bin/sh -c '[ ! -e /usr/share/glib-2.0/schemas/mobi.phosh.osk.gschema.xml ] ||
+	[ "$(GSETTINGS_BACKEND=memory gsettings get mobi.phosh.osk ignore-hw-keyboards)" = true ]'
 for unit in sddm.service NetworkManager.service berkut-firstboot.service; do
 	systemctl --root="$R" is-enabled "$unit"
 done
