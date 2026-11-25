@@ -1,0 +1,10 @@
+#!/bin/sh
+# Discard everything written in the guest at the next launch.
+[ "$(id -u)" -eq 0 ] || { echo "berkut-reset needs root: su -  (password root)"; exit 1; }
+[ -d /.uml-state ] || { echo "no writable layer at /.uml-state"; exit 1; }
+printf 'This erases every change made in the guest (files, packages, settings)\n'
+printf 'when Berkut next starts. Type yes to confirm: '
+read -r answer
+[ "$answer" = yes ] || { echo "Nothing changed."; exit 1; }
+touch /.uml-state/.uml-reset && sync
+echo "Done. Close Berkut (swipe it away) and open it again."

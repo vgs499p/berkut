@@ -1,0 +1,11 @@
+[Compositing]
+AnimationSpeed=0
+LatencyPolicy=Low
+
+[Plugins]
+blurEnabled=false
+contrastEnabled=false
+translucencyEnabled=false
+slidingpopupsEnabled=false
+scaleEnabled=false
+fadingpopupsEnabled=false

@@ -1,0 +1,12 @@
+#!/bin/sh
+# What ended the desktop session, for a screenshot from the console.
+[ "$(id -u)" -eq 0 ] || { echo "berkut-logs needs root: su -  (password root)"; exit 1; }
+user=$(sed -n 's/^User=//p' /etc/sddm.conf.d/20-autologin.conf 2>/dev/null)
+n=${1:-15}
+echo "== sessions"; loginctl list-sessions --no-legend
+echo "== firstboot"; journalctl -b --no-pager -o cat -u berkut-firstboot | tail -n "$n"
+echo "== sddm"; journalctl -b --no-pager -o cat -u sddm | tail -n "$n"
+echo "== failed units"; systemctl --failed --no-legend
+[ -n "$user" ] || exit 0
+echo "== session log"; tail -n "$n" "/home/$user"/.local/share/sddm/*-session.log 2>/dev/null
+echo "== $user journal (errors)"; journalctl -b --no-pager -o short-monotonic _UID="$(id -u "$user")" -p warning | tail -n "$n"

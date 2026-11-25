@@ -1,0 +1,29 @@
+#!/bin/bash
+# Creates the desktop account once. /etc/berkut/setup.conf, when the installer
+# put one there, holds USERNAME=, PASSWORD= and HOSTNAME= lines; it is read as
+# data and removed. Without it the account is uml/uml.
+set -eu
+conf=/etc/berkut/setup.conf
+value() { [ -f "$conf" ] && sed -n "s/^$1=//p" "$conf" | head -n 1 || true; }
+
+user=$(value USERNAME)
+password=$(value PASSWORD)
+host=$(value HOSTNAME)
+[[ $user =~ ^[a-z_][a-z0-9_-]{0,30}$ ]] && ! id "$user" >/dev/null 2>&1 || user=uml
+[ -n "$password" ] || password=$user
+[[ $host =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$ ]] || host=
+
+id "$user" >/dev/null 2>&1 || useradd -m -s /bin/bash "$user"
+for group in wheel video render input audio; do
+	getent group "$group" >/dev/null && usermod -a -G "$group" "$user"
+done
+printf '%s:%s\n' "$user" "$password" | chpasswd
+if [ -n "$host" ]; then
+	echo "$host" > /etc/hostname
+	hostname "$host"
+fi
+
+printf '%s\n' '[Autologin]' "User=$user" "Session=$(cat /etc/berkut/session)" 'Relogin=false' \
+	> /etc/sddm.conf.d/20-autologin.conf
+rm -f "$conf"
+touch /etc/berkut/configured

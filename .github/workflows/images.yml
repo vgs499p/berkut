@@ -1,0 +1,50 @@
+name: Guest images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [multi-distro]
+    paths: ["images/**", ".github/workflows/images.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { distro: arch, desktop: plasma-mobile }
+          - { distro: arch, desktop: phosh }
+          - { distro: arch, desktop: plasma }
+          - { distro: arch, desktop: xfce }
+          - { distro: fedora, desktop: plasma-mobile }
+          - { distro: fedora, desktop: phosh }
+          - { distro: fedora, desktop: plasma }
+          - { distro: fedora, desktop: xfce }
+          - { distro: ubuntu, desktop: phosh }
+          - { distro: ubuntu, desktop: lomiri }
+          - { distro: ubuntu, desktop: plasma }
+          - { distro: ubuntu, desktop: xfce }
+    name: ${{ matrix.distro }}-${{ matrix.desktop }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q erofs-utils libarchive-tools zstd gnupg
+      - name: Build
+        run: sudo BERKUT_WORK=/var/tmp/berkut images/build.sh ${{ matrix.distro }} ${{ matrix.desktop }} out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.distro }}-${{ matrix.desktop }}
+          path: out/
+          compression-level: 0
+          retention-days: 5
