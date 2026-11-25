@@ -47,6 +47,7 @@ rm -rf "$R/root/berkut"
 ln -sfn /run/systemd/resolve/stub-resolv.conf "$R/etc/resolv.conf"
 # What every boot needs: the init the boot ramdisk starts, and the services.
 chroot "$R" /bin/sh -c 'test -x /sbin/init'
+chroot "$R" /bin/sh -c 'f=/etc/X11/default-display-manager; [ ! -e $f ] || grep -qx /usr/bin/sddm $f'
 for unit in sddm.service NetworkManager.service berkut-firstboot.service; do
 	systemctl --root="$R" is-enabled "$unit"
 done

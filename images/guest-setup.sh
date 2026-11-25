@@ -56,7 +56,16 @@ install -d /etc/skel/.local/share/sddm
 systemctl mask getty@tty0.service getty@tty1.service
 systemctl disable systemd-networkd.service systemd-networkd.socket 2>/dev/null || true
 # Ubuntu and Fedora ship display managers' alternatives; SDDM is the one.
-systemctl disable gdm.service lightdm.service greetd.service phosh.service 2>/dev/null || true
+# One at a time: systemctl gives up on the whole list if one unit is missing.
+for unit in gdm.service gdm3.service lightdm.service greetd.service phosh.service; do
+	systemctl disable "$unit" 2>/dev/null || true
+done
+# Debian and Ubuntu start only the display manager this file names, and a
+# desktop's dependencies may have written another (Lomiri brings LightDM).
+if [ "$DISTRO" = ubuntu ]; then
+	install -d /etc/X11
+	echo /usr/bin/sddm > /etc/X11/default-display-manager
+fi
 systemctl enable --force sddm.service
 systemctl enable NetworkManager.service systemd-resolved.service berkut-firstboot.service
 systemctl set-default graphical.target
