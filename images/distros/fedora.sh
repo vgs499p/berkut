@@ -10,12 +10,15 @@ fetch_base() {
 	case $DE in
 	plasma-mobile) pkgs+=" plasma-mobile plasma-desktop plasma-workspace kwin plasma-nm plasma-pa konsole dolphin" ;;
 	plasma) pkgs+=" plasma-desktop plasma-workspace kwin plasma-nm plasma-pa konsole dolphin kate" ;;
-	phosh) pkgs+=" phosh phoc squeekboard gnome-console nautilus gnome-control-center" ;;
+	phosh) pkgs+=" phosh phoc stevia gnome-console nautilus gnome-control-center" ;;
 	xfce) pkgs+=" xfce4-session xfce4-panel xfwm4 xfdesktop xfce4-settings xfce4-terminal Thunar
 		xorg-x11-server-Xorg xorg-x11-drv-libinput" ;;
 	esac
-	docker run --rm -v "$R:/r" registry.fedoraproject.org/fedora:latest \
-		dnf -y --installroot=/r --use-host-config install $(echo $pkgs)
+	# setup brings /etc/passwd and /etc/group first, so later packages can
+	# own files by name.
+	docker run --rm -v "$R:/r" registry.fedoraproject.org/fedora:latest sh -ec "
+		dnf -y --installroot=/r --use-host-config install setup filesystem
+		dnf -y --installroot=/r --use-host-config install $(echo $pkgs)"
 }
 
 # fetch_base already installed everything.

@@ -4,6 +4,11 @@
 # gpg and, for Fedora, docker.
 #   images/build.sh <arch|fedora|ubuntu> <plasma-mobile|phosh|plasma|xfce|lomiri> <outdir>
 set -euxo pipefail
+# A private mount namespace: the runner's mounts are shared, so binds made
+# under the root would otherwise also appear beneath it and end up packed.
+if [ -z "${BERKUT_NS:-}" ]; then
+	exec env BERKUT_NS=1 unshare --mount --propagation private "$0" "$@"
+fi
 DISTRO=$1 DE=$2 OUT=$(mkdir -p "$3" && cd "$3" && pwd)
 HERE=$(cd "$(dirname "$0")" && pwd)
 W=${BERKUT_WORK:-/mnt/berkut-work}
@@ -11,8 +16,9 @@ R=$W/root
 mkdir -p "$R"
 
 cleanup() {
-	for m in dev/pts dev proc sys run tmp; do umount -l "$R/$m" 2>/dev/null || true; done
-	umount -l "$R" 2>/dev/null || true
+	# Anything the package manager left running (gpg-agent) holds the root.
+	fuser -k -M -m "$R" 2>/dev/null || true
+	umount -R -l "$R" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -24,7 +30,7 @@ fetch_base
 # 2. Packages and guest setup inside the root.
 mount --bind "$R" "$R"
 mkdir -p "$R"/{dev,proc,sys,run,tmp}
-mount --rbind /dev "$R/dev"; mount --make-rslave "$R/dev"
+mount --rbind /dev "$R/dev"
 mount -t proc proc "$R/proc"
 mount -t sysfs sys "$R/sys"
 mount -t tmpfs tmpfs "$R/run"
@@ -39,12 +45,15 @@ chroot "$R" /usr/bin/env -i HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/
 	". /root/berkut/$DISTRO.sh; install_packages; . /root/berkut/guest-setup.sh; clean_packages"
 rm -rf "$R/root/berkut"
 ln -sfn /run/systemd/resolve/stub-resolv.conf "$R/etc/resolv.conf"
-cleanup
+umount -R -l "$R"
+if findmnt -rn -o TARGET | grep -q "^$R"; then
+	echo "mounts remain under $R"; findmnt -rn -o TARGET | grep "^$R"; exit 1
+fi
 
 # 3. Pack. Keep real file times: SDDM ignores configuration dated at the epoch.
 NAME=$DISTRO-$DE
 du -sh "$R"
-mkfs.erofs -zlz4hc,12 -Eztailpacking "$W/$NAME.erofs" "$R"
+mkfs.erofs -zlz4hc,12 -Eztailpacking "$W/$NAME.erofs" "$R" >/dev/null
 rm -rf "$R"
 
 # A release asset must stay under 2 GiB: compress and split.

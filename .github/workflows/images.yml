@@ -39,7 +39,7 @@ jobs:
       - name: Tools
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q erofs-utils libarchive-tools zstd gnupg
+          sudo apt-get install -y -q erofs-utils libarchive-tools zstd gnupg psmisc
       - name: Build
         run: sudo BERKUT_WORK=/var/tmp/berkut images/build.sh ${{ matrix.distro }} ${{ matrix.desktop }} out
       - uses: actions/upload-artifact@v4
