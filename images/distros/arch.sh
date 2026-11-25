@@ -1,5 +1,5 @@
 # Arch Linux ARM.
-DESKTOPS="plasma-mobile phosh plasma xfce"
+DESKTOPS="plasma-mobile phosh plasma"
 
 fetch_base() {
 	local url=http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
@@ -28,7 +28,6 @@ install_packages() {
 	plasma-mobile) pkgs+=" plasma-mobile plasma-desktop plasma-workspace kwin breeze plasma-nm plasma-pa powerdevil konsole dolphin" ;;
 	plasma) pkgs+=" plasma-desktop plasma-workspace kwin breeze plasma-nm plasma-pa powerdevil konsole dolphin kate" ;;
 	phosh) pkgs+=" phosh phoc squeekboard gnome-console nautilus gnome-control-center" ;;
-	xfce) pkgs+=" xfce4 xorg-server xf86-input-libinput" ;;
 	esac
 	pacman -S --noconfirm --needed $pkgs
 	sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen

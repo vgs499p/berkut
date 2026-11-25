@@ -24,15 +24,12 @@ jobs:
           - { distro: arch, desktop: plasma-mobile }
           - { distro: arch, desktop: phosh }
           - { distro: arch, desktop: plasma }
-          - { distro: arch, desktop: xfce }
           - { distro: fedora, desktop: plasma-mobile }
           - { distro: fedora, desktop: phosh }
           - { distro: fedora, desktop: plasma }
-          - { distro: fedora, desktop: xfce }
           - { distro: ubuntu, desktop: phosh }
           - { distro: ubuntu, desktop: lomiri }
           - { distro: ubuntu, desktop: plasma }
-          - { distro: ubuntu, desktop: xfce }
     name: ${{ matrix.distro }}-${{ matrix.desktop }}
     steps:
       - uses: actions/checkout@v4

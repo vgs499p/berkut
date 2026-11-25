@@ -1,5 +1,5 @@
 # Ubuntu 26.04 LTS, from the ubuntu-base tarball.
-DESKTOPS="phosh lomiri plasma xfce"
+DESKTOPS="phosh lomiri plasma"
 SUITE=resolute
 
 fetch_base() {
@@ -31,7 +31,6 @@ install_packages() {
 	phosh) pkgs+=" phosh phoc squeekboard gnome-console nautilus gnome-control-center" ;;
 	lomiri) pkgs+=" lomiri lomiri-desktop-session lomiri-terminal-app" ;;
 	plasma) pkgs+=" kde-plasma-desktop plasma-nm plasma-pa" ;;
-	xfce) pkgs+=" xfce4 xfce4-terminal xserver-xorg xserver-xorg-input-libinput" ;;
 	esac
 	# Recommends carry the parts of a desktop session that are not hard
 	# dependencies.

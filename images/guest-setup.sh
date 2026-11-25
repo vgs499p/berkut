@@ -2,10 +2,7 @@
 # root by build.sh, with DISTRO and DE set.
 F=/root/berkut/files
 
-case $DE in
-xfce) session_dir=/usr/share/xsessions ;;
-*) session_dir=/usr/share/wayland-sessions ;;
-esac
+session_dir=/usr/share/wayland-sessions
 # Fail the build rather than ship an image whose autologin cannot start.
 test -f "$session_dir/$DE.desktop" || { ls /usr/share/wayland-sessions /usr/share/xsessions || true; exit 1; }
 
@@ -21,12 +18,10 @@ echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 getent group wheel >/dev/null || groupadd -r wheel
 
-# SDDM on X11 for Xfce, an X session; on Wayland elsewhere, where there is no
-# X server. KWin draws the greeter where it is installed, weston elsewhere.
-display=wayland
-[ "$DE" != xfce ] || display=x11
-printf '%s\n' '[General]' "DisplayServer=$display" > /etc/sddm.conf.d/10-wayland.conf
-if [ "$display" = wayland ] && command -v kwin_wayland >/dev/null; then
+# SDDM on Wayland: every desktop offered is a Wayland one. KWin draws the
+# greeter where it is installed, weston elsewhere.
+printf '%s\n' '[General]' 'DisplayServer=wayland' > /etc/sddm.conf.d/10-wayland.conf
+if command -v kwin_wayland >/dev/null; then
 	printf '%s\n' 'GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell' '' '[Wayland]' \
 		'CompositorCommand=kwin_wayland --drm --no-lockscreen --no-global-shortcuts --locale1' \
 		>> /etc/sddm.conf.d/10-wayland.conf

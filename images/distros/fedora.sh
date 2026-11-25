@@ -1,5 +1,5 @@
 # Fedora, installed into an empty root by the official container's dnf.
-DESKTOPS="plasma-mobile phosh plasma xfce"
+DESKTOPS="plasma-mobile phosh plasma"
 
 fetch_base() {
 	local pkgs="fedora-release filesystem bash coreutils systemd systemd-udev systemd-resolved
@@ -11,8 +11,6 @@ fetch_base() {
 	plasma-mobile) pkgs+=" plasma-mobile plasma-desktop plasma-workspace kwin plasma-nm plasma-pa konsole dolphin" ;;
 	plasma) pkgs+=" plasma-desktop plasma-workspace kwin plasma-nm plasma-pa konsole dolphin kate" ;;
 	phosh) pkgs+=" phosh phoc stevia gnome-console nautilus gnome-control-center" ;;
-	xfce) pkgs+=" xfce4-session xfce4-panel xfwm4 xfdesktop xfce4-settings xfce4-terminal Thunar
-		xorg-x11-server-Xorg xorg-x11-drv-libinput" ;;
 	esac
 	# setup brings /etc/passwd and /etc/group first, so later packages can
 	# own files by name.
