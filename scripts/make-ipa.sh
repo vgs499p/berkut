@@ -1,17 +1,17 @@
 #!/bin/sh
-# Assemble the Berkut IPA: the unsigned Release app, the Arch Linux
-# ARM KDE image as a bundle resource, ad-hoc signed with the app's
+# Assemble the Berkut IPA: the unsigned Release app (which installs guest
+# systems itself; set BERKUT_IMAGE to also bundle one), ad-hoc signed with the app's
 # entitlements so a re-signing sideloader (Plume Impactor) carries them over.
 set -eu
 B=${BERKUT_BUILD_ROOT:-/Volumes/BerkutBuild}
 APP=$B/DerivedData/Build/Products/Release-iphoneos/Kernarium.app
-IMG=${BERKUT_IMAGE:-$B/arch/out/archlinuxarm-kde.erofs}
+IMG=${BERKUT_IMAGE:-}
 ENT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)/Berkut.entitlements
 OUT=${1:?output ipa path}
 W=$B/ipa
 rm -rf "$W"; mkdir -p "$W/Payload"
 ditto "$APP" "$W/Payload/Kernarium.app"
-cp "$IMG" "$W/Payload/Kernarium.app/archlinuxarm-kde.erofs"
+[ -z "$IMG" ] || cp "$IMG" "$W/Payload/Kernarium.app/archlinuxarm-kde.erofs"
 # Frameworks first, then the app with its entitlements.
 for f in "$W"/Payload/Kernarium.app/Frameworks/*.framework; do
 	codesign -f -s - "$f"

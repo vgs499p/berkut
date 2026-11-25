@@ -1,6 +1,5 @@
 [Unit]
 Description=Create the Berkut desktop account
-ConditionPathExists=!/etc/berkut/configured
 Before=display-manager.service sddm.service systemd-user-sessions.service
 
 [Service]

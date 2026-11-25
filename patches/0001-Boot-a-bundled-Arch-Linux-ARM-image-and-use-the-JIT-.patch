@@ -1,7 +1,7 @@
-From eb07e8410025040a068f0a486f40e01db80cbccf Mon Sep 17 00:00:00 2001
+From 999fca18b3307e37ca7d4936671fcd4d9bff21f0 Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Thu, 19 Nov 2026 20:20:33 -0300
-Subject: [PATCH 1/6] Boot a bundled Arch Linux ARM image and use the JIT under
+Subject: [PATCH 1/7] Boot a bundled Arch Linux ARM image and use the JIT under
  StikDebug
 
 Clone the archlinuxarm-kde.erofs image the application bundle carries into
@@ -17,7 +17,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
  3 files changed, 36 insertions(+), 2 deletions(-)
 
 diff --git a/Kernarium/Kernarium/ContentView.swift b/Kernarium/Kernarium/ContentView.swift
-index 8ee4cfa..0cbb303 100644
+index 8ee4cfaa6..0cbb3039a 100644
 --- a/Kernarium/Kernarium/ContentView.swift
 +++ b/Kernarium/Kernarium/ContentView.swift
 @@ -835,8 +835,19 @@ private func runGuest(
@@ -42,7 +42,7 @@ index 8ee4cfa..0cbb303 100644
          request.width = width
          request.height = height
 diff --git a/Kernarium/Kernarium/EmulatorConfiguration.swift b/Kernarium/Kernarium/EmulatorConfiguration.swift
-index fb5fc1a..30c0740 100644
+index fb5fc1a00..30c074025 100644
 --- a/Kernarium/Kernarium/EmulatorConfiguration.swift
 +++ b/Kernarium/Kernarium/EmulatorConfiguration.swift
 @@ -401,9 +401,31 @@ enum RootfsImage {
@@ -79,7 +79,7 @@ index fb5fc1a..30c0740 100644
          FileManager.default.urls(
              for: .documentDirectory,
 diff --git a/Kernarium/Kernarium/KernariumApp.swift b/Kernarium/Kernarium/KernariumApp.swift
-index dde40af..7e0281a 100644
+index dde40affb..7e0281ad4 100644
 --- a/Kernarium/Kernarium/KernariumApp.swift
 +++ b/Kernarium/Kernarium/KernariumApp.swift
 @@ -5,6 +5,7 @@ import SwiftUI

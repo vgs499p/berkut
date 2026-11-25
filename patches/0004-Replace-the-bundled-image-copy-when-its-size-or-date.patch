@@ -1,7 +1,7 @@
-From ca6b29badaaf27cc836400f23c1a802abfdf3fa4 Mon Sep 17 00:00:00 2001
+From b10e45e3826134901463ac2ddd158a426ddbf195 Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Thu, 19 Nov 2026 20:20:33 -0300
-Subject: [PATCH 4/6] Replace the bundled image copy when its size or date
+Subject: [PATCH 4/7] Replace the bundled image copy when its size or date
  differs
 
 An updated image of the same block-rounded size would otherwise be kept.
@@ -12,7 +12,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
  1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/Kernarium/Kernarium/EmulatorConfiguration.swift b/Kernarium/Kernarium/EmulatorConfiguration.swift
-index 30c0740..88032f5 100644
+index 30c074025..88032f51f 100644
 --- a/Kernarium/Kernarium/EmulatorConfiguration.swift
 +++ b/Kernarium/Kernarium/EmulatorConfiguration.swift
 @@ -416,11 +416,12 @@ enum RootfsImage {

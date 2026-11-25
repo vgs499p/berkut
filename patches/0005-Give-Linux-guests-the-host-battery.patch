@@ -1,7 +1,7 @@
-From 1d692cdbde7a53fc5a25fdead638625872c0a321 Mon Sep 17 00:00:00 2001
+From 68a9638f664846335af6e0c657be5d7871c2e379 Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Thu, 19 Nov 2026 20:20:33 -0300
-Subject: [PATCH 5/6] Give Linux guests the host battery
+Subject: [PATCH 5/7] Give Linux guests the host battery
 
 Enable the power-supply class and the Kernarium Virtio battery driver in
 the mainline kernel, and attach the battery device for Linux guests as for
@@ -15,7 +15,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
  3 files changed, 10 insertions(+), 9 deletions(-)
 
 diff --git a/Kernarium/Runtime/KernariumRuntime.mm b/Kernarium/Runtime/KernariumRuntime.mm
-index 3aebcb7..44d9f05 100644
+index 3aebcb79c..44d9f052a 100644
 --- a/Kernarium/Runtime/KernariumRuntime.mm
 +++ b/Kernarium/Runtime/KernariumRuntime.mm
 @@ -1815,9 +1815,7 @@ private:
@@ -58,7 +58,7 @@ index 3aebcb7..44d9f05 100644
              boot->touchscreen->takeConnectionName(),
              uml::input::virtio::protocol::deviceId));
 diff --git a/kernel/mainline-6.18/artifacts/accepted-4k.env b/kernel/mainline-6.18/artifacts/accepted-4k.env
-index ec4d643..9fa31f6 100644
+index ec4d6437e..9fa31f611 100644
 --- a/kernel/mainline-6.18/artifacts/accepted-4k.env
 +++ b/kernel/mainline-6.18/artifacts/accepted-4k.env
 @@ -1,7 +1,7 @@
@@ -72,7 +72,7 @@ index ec4d643..9fa31f6 100644
  UML_KERNEL_ARTIFACT_SLICE='arm64'
  UML_KERNEL_ARTIFACT_RELEASE='6.18.60-g81c22bf24dd9'
 diff --git a/kernel/mainline-6.18/config/mainline.fragment b/kernel/mainline-6.18/config/mainline.fragment
-index 18852d6..baf20cd 100644
+index 18852d6e8..baf20cd75 100644
 --- a/kernel/mainline-6.18/config/mainline.fragment
 +++ b/kernel/mainline-6.18/config/mainline.fragment
 @@ -56,3 +56,9 @@ CONFIG_POSIX_AUX_CLOCKS=y

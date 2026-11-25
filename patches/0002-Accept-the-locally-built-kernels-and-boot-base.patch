@@ -1,7 +1,7 @@
-From cc33b3f38dc77c74c86aecf9e921a1e6cd88b4d2 Mon Sep 17 00:00:00 2001
+From c6677612b55e0ad9b92cfec8bad8dc67011a382c Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Thu, 19 Nov 2026 20:20:33 -0300
-Subject: [PATCH 2/6] Accept the locally built kernels and boot base
+Subject: [PATCH 2/7] Accept the locally built kernels and boot base
 
 The kernels are built from the accepted final tree; their release string
 carries the local replay's commit. The boot base is rebuilt from Alpine's
@@ -16,7 +16,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
  3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/mainline-6.18/artifacts/accepted-4k.env b/kernel/mainline-6.18/artifacts/accepted-4k.env
-index a7ac2a7..ec4d643 100644
+index a7ac2a7ae..ec4d6437e 100644
 --- a/kernel/mainline-6.18/artifacts/accepted-4k.env
 +++ b/kernel/mainline-6.18/artifacts/accepted-4k.env
 @@ -4,7 +4,7 @@ UML_KERNEL_ARTIFACT_RELEASE_ID='20261119-6.18.60-ca1'
@@ -29,7 +29,7 @@ index a7ac2a7..ec4d643 100644
  UML_KERNEL_ARTIFACT_FINAL_TREE='ee913342fecf9f7f9836b616f5c605a036da0098'
  UML_KERNEL_ARTIFACT_ABI_VERSION=29
 diff --git a/kernel/mainline-6.18/artifacts/accepted-android-4k.env b/kernel/mainline-6.18/artifacts/accepted-android-4k.env
-index 6c31dae..a5f62cd 100644
+index 6c31dae58..a5f62cdc5 100644
 --- a/kernel/mainline-6.18/artifacts/accepted-android-4k.env
 +++ b/kernel/mainline-6.18/artifacts/accepted-android-4k.env
 @@ -4,7 +4,7 @@ UML_KERNEL_ARTIFACT_RELEASE_ID='20261119-6.18.60-ca1'
@@ -42,7 +42,7 @@ index 6c31dae..a5f62cd 100644
  UML_KERNEL_ARTIFACT_FINAL_TREE='ee913342fecf9f7f9836b616f5c605a036da0098'
  UML_KERNEL_ARTIFACT_ABI_VERSION=29
 diff --git a/tools/rootfs/boot-ramdisk/accepted-aarch64.env b/tools/rootfs/boot-ramdisk/accepted-aarch64.env
-index e97e848..96bf1b3 100644
+index e97e84836..96bf1b360 100644
 --- a/tools/rootfs/boot-ramdisk/accepted-aarch64.env
 +++ b/tools/rootfs/boot-ramdisk/accepted-aarch64.env
 @@ -3,5 +3,5 @@ UML_BOOT_BASE_SCHEMA=1

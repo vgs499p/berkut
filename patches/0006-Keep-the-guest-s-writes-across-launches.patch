@@ -1,7 +1,7 @@
-From 878aaaa4093c9341075877faac0466c1248edd1b Mon Sep 17 00:00:00 2001
+From 3157b4dc87a257bb67135f6012476dd11a1193f3 Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Thu, 19 Nov 2026 20:20:33 -0300
-Subject: [PATCH 6/6] Keep the guest's writes across launches
+Subject: [PATCH 6/7] Keep the guest's writes across launches
 
 The application keeps the overlay disk in Application Support (excluded
 from backups) instead of recreating it in the temporary directory, and
@@ -19,7 +19,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
  4 files changed, 105 insertions(+), 24 deletions(-)
 
 diff --git a/Kernarium/Kernarium/ContentView.swift b/Kernarium/Kernarium/ContentView.swift
-index 0cbb303..bf28f9d 100644
+index 0cbb3039a..bf28f9dcf 100644
 --- a/Kernarium/Kernarium/ContentView.swift
 +++ b/Kernarium/Kernarium/ContentView.swift
 @@ -696,27 +696,55 @@ enum OverlayDisk {
@@ -111,7 +111,7 @@ index 0cbb303..bf28f9d 100644
              )
              return PreparedBoot(rootfs: rootfs, overlay: overlay)
 diff --git a/Kernarium/KernariumTests/KernariumTests.swift b/Kernarium/KernariumTests/KernariumTests.swift
-index f6982c1..72005ae 100644
+index f6982c1b1..72005ae15 100644
 --- a/Kernarium/KernariumTests/KernariumTests.swift
 +++ b/Kernarium/KernariumTests/KernariumTests.swift
 @@ -657,26 +657,31 @@ struct KernariumTests {
@@ -152,7 +152,7 @@ index f6982c1..72005ae 100644
  
      @Test
 diff --git a/Kernarium/Runtime/KernariumRuntime.mm b/Kernarium/Runtime/KernariumRuntime.mm
-index 44d9f05..99911c4 100644
+index 44d9f052a..99911c4bc 100644
 --- a/Kernarium/Runtime/KernariumRuntime.mm
 +++ b/Kernarium/Runtime/KernariumRuntime.mm
 @@ -1376,6 +1376,9 @@ std::string bootParameters(bool ext4Image)
@@ -166,7 +166,7 @@ index 44d9f05..99911c4 100644
      return parameters;
  }
 diff --git a/tools/rootfs/boot-ramdisk/init b/tools/rootfs/boot-ramdisk/init
-index 5f54778..81c59e4 100755
+index 5f5477870..81c59e45c 100755
 --- a/tools/rootfs/boot-ramdisk/init
 +++ b/tools/rootfs/boot-ramdisk/init
 @@ -21,6 +21,7 @@ root=/dev/ubda

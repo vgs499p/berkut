@@ -4,6 +4,11 @@
 # data and removed. Without it the account is uml/uml.
 set -eu
 conf=/etc/berkut/setup.conf
+# The installer may hand the file over again; once configured it is discarded.
+if [ -e /etc/berkut/configured ]; then
+	rm -f "$conf"
+	exit 0
+fi
 value() { [ -f "$conf" ] && sed -n "s/^$1=//p" "$conf" | head -n 1 || true; }
 
 user=$(value USERNAME)

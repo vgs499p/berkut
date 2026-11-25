@@ -1,0 +1,687 @@
+From 365a29d19cee74b2cb41875fd5338579ff11619c Mon Sep 17 00:00:00 2001
+From: vgs499p <vgs499p@users.noreply.github.com>
+Date: Wed, 25 Nov 2026 17:09:32 -0300
+Subject: [PATCH 7/7] Install guest systems from the project's releases
+
+An installer screen downloads a distribution and desktop from the
+images-1 release, verifies each part and the unpacked erofs by SHA-256,
+and records the account the guest creates at its first boot. Each system
+has its own overlay disk; the one Berkut 1.0 bundled keeps its disk. The
+runtime copies an account file found beside the overlay into the guest.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ Kernarium/Kernarium/ContentView.swift         |  81 ++-
+ .../Kernarium/Kernarium-Bridging-Header.h     |   2 +
+ Kernarium/Kernarium/SystemInstaller.swift     | 480 ++++++++++++++++++
+ Kernarium/Runtime/KernariumRuntime.mm         |  12 +-
+ 4 files changed, 552 insertions(+), 23 deletions(-)
+ create mode 100644 Kernarium/Kernarium/SystemInstaller.swift
+
+diff --git a/Kernarium/Kernarium/ContentView.swift b/Kernarium/Kernarium/ContentView.swift
+index bf28f9dcf..7bceab7f7 100644
+--- a/Kernarium/Kernarium/ContentView.swift
++++ b/Kernarium/Kernarium/ContentView.swift
+@@ -21,6 +21,9 @@ struct ContentView: View {
+     @State private var framebufferKeyboardVisible = false
+     @State private var specialKeysExpanded = false
+     @State private var settingsPresented = false
++    /// Berkut: the system installer, opened by itself when there is nothing
++    /// to boot.
++    @State private var installerPresented = false
+     /// Whether the window scene fills the screen. Until the view is in a
+     /// scene, it is taken to be a window, which is the system's own default.
+     @State private var sceneCoversScreen = false
+@@ -120,7 +123,15 @@ struct ContentView: View {
+         .sheet(isPresented: $settingsPresented) {
+             EmulatorSettingsView()
+         }
++        .sheet(isPresented: $installerPresented) {
++            SystemInstallerView()
++        }
+         .onAppear {
++            if RootfsImage.selection(
++                named: EmulatorConfiguration.load().rootfsFilename
++            ) == nil {
++                installerPresented = true
++            }
+             serialConsole.startObserving()
+             let window = GuestPictureInPicture.shared
+             window.wanted = {
+@@ -188,6 +199,13 @@ struct ContentView: View {
+     private var floatingButtonsContent: some View {
+         VStack(alignment: .trailing, spacing: FloatingControlMetrics.spacing) {
+             settingsButton
++            floatingIconButton(
++                systemName: "square.and.arrow.down",
++                accessibilityLabel: "Install a system",
++                identifier: "installSystemButton"
++            ) {
++                installerPresented = true
++            }
+             if keepRunningChosen && launcher.phase == .running {
+                 keepRunningButton
+             }
+@@ -696,35 +714,46 @@ enum OverlayDisk {
+         return UInt64(sizeGiB) * 1024 * 1024 * 1024
+     }
+ 
+-    /// Berkut keeps the overlay disk in Library/Guest, out of iCloud backups,
+-    /// so the guest's writes survive a relaunch. A missing disk is created
+-    /// sparse at the requested size and a smaller one is grown to it; the
+-    /// boot's /init formats a blank disk and keeps (and resizes) an existing
+-    /// filesystem. The path reaches the kernel command line (ubd1=), which UML
+-    /// splits at spaces, so it must have none: not "Application Support".
+-    /// Copies older builds left in the temporary directory or Application
+-    /// Support are removed.
+-    static func prepare(sizeGiB: Int, in directory: URL? = nil) throws -> URL {
++    /// Where each system's writable disk lives: Library/Guest, whose path has
++    /// no space (it reaches the kernel command line as ubd1=). The system
++    /// Berkut 1.0 bundled keeps its original disk name; every other system has
++    /// its own, so one system's files never lie over another's.
++    static func location(for imageName: String, in directory: URL? = nil) throws -> URL {
+         let manager = FileManager.default
+-        let library = try manager.url(
++        let directory = try directory ?? manager.url(
+             for: .libraryDirectory, in: .userDomainMask,
+             appropriateFor: nil, create: true
+-        )
+-        let directory = directory ?? library.appendingPathComponent("Guest")
++        ).appendingPathComponent("Guest")
+         try manager.createDirectory(
+             at: directory, withIntermediateDirectories: true
+         )
+-        try? manager.removeItem(
+-            at: manager.temporaryDirectory.appendingPathComponent(filename)
+-        )
+-        try? manager.removeItem(
+-            at: library.appendingPathComponent("Application Support")
+-                .appendingPathComponent(filename)
+-        )
+-        var disk = directory.appendingPathComponent(filename)
++        let name = imageName == RootfsImage.defaultFilename
++            ? filename
++            : (imageName as NSString).deletingPathExtension + ".overlay.ext4"
++        let disk = directory.appendingPathComponent(name)
+         guard disk.path.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else {
+             throw CocoaError(.fileWriteInvalidFileName)
+         }
++        return disk
++    }
++
++    /// The account an installed system creates at its first boot; the runtime
++    /// hands this file to the guest when it is present.
++    static func setupFile(beside disk: URL) -> URL {
++        disk.appendingPathExtension("setup")
++    }
++
++    /// The disk outlives a run, excluded from backups, so the guest's writes
++    /// survive a relaunch. A missing disk is created sparse at the requested
++    /// size and a smaller one is grown to it; the boot's /init formats a blank
++    /// disk and keeps (and resizes) an existing filesystem.
++    static func prepare(
++        sizeGiB: Int,
++        for imageName: String = RootfsImage.defaultFilename,
++        in directory: URL? = nil
++    ) throws -> URL {
++        let manager = FileManager.default
++        var disk = try location(for: imageName, in: directory)
+         let requestedByteCount = try byteCount(forSizeGiB: sizeGiB)
+         let created = !manager.fileExists(atPath: disk.path)
+         if created {
+@@ -1170,8 +1199,18 @@ final class EmulatorLauncher: ObservableObject, SpaceRun {
+         }
+         do {
+             let overlay = try OverlayDisk.prepare(
+-                sizeGiB: configuration.overlaySizeGiB
++                sizeGiB: configuration.overlaySizeGiB,
++                for: rootfs.lastPathComponent
+             )
++            // The account file holds a password: it goes once the guest has
++            // had time to create the account.
++            let setup = OverlayDisk.setupFile(beside: overlay)
++            if FileManager.default.fileExists(atPath: setup.path) {
++                Task {
++                    try? await Task.sleep(for: .seconds(600))
++                    try? FileManager.default.removeItem(at: setup)
++                }
++            }
+             return PreparedBoot(rootfs: rootfs, overlay: overlay)
+         } catch {
+             print(
+diff --git a/Kernarium/Kernarium/Kernarium-Bridging-Header.h b/Kernarium/Kernarium/Kernarium-Bridging-Header.h
+index 4ff5a1d7b..3dc563ddf 100644
+--- a/Kernarium/Kernarium/Kernarium-Bridging-Header.h
++++ b/Kernarium/Kernarium/Kernarium-Bridging-Header.h
+@@ -1,3 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #import "../../GuestHost/Sources/KernariumRuntimeLoader.h"
++// Berkut: the system installer unpacks downloads (LibZstd.xcframework).
++#include <zstd.h>
+diff --git a/Kernarium/Kernarium/SystemInstaller.swift b/Kernarium/Kernarium/SystemInstaller.swift
+new file mode 100644
+index 000000000..af93078e6
+--- /dev/null
++++ b/Kernarium/Kernarium/SystemInstaller.swift
+@@ -0,0 +1,480 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Berkut: downloads a guest system from the project's releases into Documents.
++
++import CryptoKit
++import Foundation
++import SwiftUI
++
++/// One entry of the published catalog: an erofs image, zstd-compressed and
++/// split into parts that fit a release asset.
++nonisolated struct SystemImage: Decodable, Identifiable, Hashable, Sendable {
++    struct Part: Decodable, Hashable, Sendable {
++        let file: String
++        let size: Int64
++        let sha256: String
++    }
++
++    let distro: String
++    let desktop: String
++    let file: String
++    let size: Int64
++    let sha256: String
++    let parts: [Part]
++
++    var id: String { file }
++    var downloadSize: Int64 { parts.reduce(0) { $0 + $1.size } }
++
++    var distroName: String {
++        ["arch": "Arch Linux ARM", "fedora": "Fedora", "ubuntu": "Ubuntu"][distro]
++            ?? distro
++    }
++
++    var desktopName: String {
++        [
++            "plasma-mobile": "Plasma Mobile", "phosh": "Phosh",
++            "plasma": "Plasma Desktop", "xfce": "Xfce", "lomiri": "Lomiri",
++        ][desktop] ?? desktop
++    }
++
++    /// Whether every name stays a plain file name the launcher accepts.
++    var isWellFormed: Bool {
++        RootfsImage.validatedFilename(file) != nil && !parts.isEmpty &&
++            parts.allSatisfy {
++                !$0.file.isEmpty && !$0.file.hasPrefix(".") &&
++                    ($0.file as NSString).lastPathComponent == $0.file
++            }
++    }
++}
++
++nonisolated private struct SystemCatalog: Decodable, Sendable {
++    let images: [SystemImage]
++}
++
++/// The account the guest creates at its first boot.
++nonisolated struct GuestAccount: Equatable, Sendable {
++    var username = ""
++    var password = ""
++    var hostname = "berkut"
++
++    var problem: String? {
++        if username.range(
++            of: "^[a-z_][a-z0-9_-]{0,30}$", options: .regularExpression
++        ) == nil || username == "root" {
++            return "Username: lowercase letters, digits, - or _, not root."
++        }
++        if password.isEmpty || password.contains(where: \.isNewline) {
++            return "Enter a password."
++        }
++        if hostname.range(
++            of: "^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$", options: .regularExpression
++        ) == nil {
++            return "Computer name: letters, digits and - only."
++        }
++        return nil
++    }
++
++    var setupFile: Data {
++        Data("USERNAME=\(username)\nPASSWORD=\(password)\nHOSTNAME=\(hostname)\n".utf8)
++    }
++}
++
++nonisolated struct InstallError: LocalizedError {
++    let message: String
++    var errorDescription: String? { message }
++}
++
++/// Streams zstd parts, in order, into one file while hashing the result.
++nonisolated private final class ImageWriter: @unchecked Sendable {
++    private let stream: OpaquePointer
++    private let output: FileHandle
++    private var hash = SHA256()
++    private var pending = 1
++
++    init(url: URL) throws {
++        guard FileManager.default.createFile(atPath: url.path, contents: nil),
++              let stream = ZSTD_createDStream() else {
++            throw InstallError(message: "Cannot create the system file.")
++        }
++        self.stream = stream
++        output = try FileHandle(forWritingTo: url)
++        ZSTD_initDStream(stream)
++    }
++
++    deinit {
++        ZSTD_freeDStream(stream)
++        try? output.close()
++    }
++
++    /// Verifies one downloaded part and appends what it decompresses to.
++    func consume(part url: URL, expecting digest: String) throws {
++        guard try Self.digest(of: url) == digest else {
++            throw InstallError(message: "A download was damaged. Try again.")
++        }
++        let input = try FileHandle(forReadingFrom: url)
++        defer { try? input.close() }
++        var buffer = [UInt8](repeating: 0, count: ZSTD_DStreamOutSize())
++        while true {
++            let more = try autoreleasepool { () -> Bool in
++                guard let chunk = try input.read(upToCount: 1 << 20),
++                      !chunk.isEmpty else { return false }
++                try chunk.withUnsafeBytes { raw in
++                    var source = ZSTD_inBuffer(
++                        src: raw.baseAddress, size: raw.count, pos: 0
++                    )
++                    var full = false
++                    while source.pos < source.size || full {
++                        let produced = try buffer.withUnsafeMutableBytes { out -> Data in
++                            var sink = ZSTD_outBuffer(
++                                dst: out.baseAddress, size: out.count, pos: 0
++                            )
++                            pending = ZSTD_decompressStream(stream, &sink, &source)
++                            guard ZSTD_isError(pending) == 0 else {
++                                throw InstallError(message: "The system file is corrupt.")
++                            }
++                            full = sink.pos == sink.size
++                            return Data(bytes: out.baseAddress!, count: sink.pos)
++                        }
++                        hash.update(data: produced)
++                        try output.write(contentsOf: produced)
++                    }
++                }
++                return true
++            }
++            if !more { break }
++        }
++    }
++
++    func finish(expecting digest: String) throws {
++        try output.synchronize()
++        let actual = hash.finalize().map { String(format: "%02x", $0) }.joined()
++        guard pending == 0, actual == digest else {
++            throw InstallError(message: "The system did not verify. Try again.")
++        }
++    }
++
++    private static func digest(of url: URL) throws -> String {
++        let input = try FileHandle(forReadingFrom: url)
++        defer { try? input.close() }
++        var hash = SHA256()
++        while try autoreleasepool(invoking: { () -> Bool in
++            guard let chunk = try input.read(upToCount: 1 << 20),
++                  !chunk.isEmpty else { return false }
++            hash.update(data: chunk)
++            return true
++        }) {}
++        return hash.finalize().map { String(format: "%02x", $0) }.joined()
++    }
++}
++
++@MainActor
++final class SystemInstaller: ObservableObject {
++    static let shared = SystemInstaller()
++
++    private static let base = URL(
++        string: "https://github.com/vgs499p/berkut/releases/download/images-1/"
++    )!
++
++    enum Phase: Equatable {
++        case idle
++        case working(String, Double)
++        case installed(String)
++        case failed(String)
++    }
++
++    @Published private(set) var images: [SystemImage] = []
++    @Published private(set) var catalogProblem: String?
++    @Published private(set) var phase = Phase.idle
++
++    private var task: Task<Void, Never>?
++
++    var isWorking: Bool {
++        if case .working = phase { return true }
++        return false
++    }
++
++    func loadCatalog() async {
++        catalogProblem = nil
++        do {
++            var request = URLRequest(url: Self.base.appendingPathComponent("catalog.json"))
++            request.cachePolicy = .reloadIgnoringLocalCacheData
++            let (data, response) = try await URLSession.shared.data(for: request)
++            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
++                throw InstallError(message: "No systems are published yet.")
++            }
++            images = try JSONDecoder().decode(SystemCatalog.self, from: data)
++                .images.filter(\.isWellFormed)
++        } catch {
++            catalogProblem = error.localizedDescription
++        }
++    }
++
++    func install(_ image: SystemImage, account: GuestAccount) {
++        guard !isWorking else { return }
++        guard EmulatorLauncher.shared.runningGuestName != image.file else {
++            phase = .failed(
++                "This system is running. Pick another one in Settings, " +
++                    "reopen Berkut, then reinstall it."
++            )
++            return
++        }
++        phase = .working("Preparing", 0)
++        UIApplication.shared.isIdleTimerDisabled = true
++        task = Task {
++            do {
++                try await download(image, account: account)
++                phase = .installed(image.file)
++            } catch is CancellationError {
++                phase = .idle
++            } catch {
++                phase = Task.isCancelled ? .idle : .failed(error.localizedDescription)
++            }
++            if EmulatorLauncher.shared.runningGuestName == nil {
++                UIApplication.shared.isIdleTimerDisabled = false
++            }
++        }
++    }
++
++    func cancel() {
++        task?.cancel()
++    }
++
++    private func download(_ image: SystemImage, account: GuestAccount) async throws {
++        let manager = FileManager.default
++        let documents = RootfsImage.documentsDirectory
++        let destination = documents.appendingPathComponent(image.file)
++        // Hidden, so the image picker never offers a half-written system.
++        let partial = documents.appendingPathComponent(".\(image.file).partial")
++        defer { try? manager.removeItem(at: partial) }
++
++        let largest = image.parts.map(\.size).max() ?? 0
++        let free = try documents.resourceValues(
++            forKeys: [.volumeAvailableCapacityForImportantUsageKey]
++        ).volumeAvailableCapacityForImportantUsage ?? 0
++        let needed = image.size + largest + (1 << 30)
++        guard free >= needed else {
++            let format = ByteCountFormatter()
++            throw InstallError(
++                message: "Not enough space: \(format.string(fromByteCount: needed)) " +
++                    "needed, \(format.string(fromByteCount: free)) free."
++            )
++        }
++
++        let writer = try ImageWriter(url: partial)
++        var done: Int64 = 0
++        for (index, part) in image.parts.enumerated() {
++            let label = "Downloading \(index + 1) of \(image.parts.count)"
++            let file = try await fetch(
++                Self.base.appendingPathComponent(part.file)
++            ) { fraction in
++                self.phase = .working(
++                    label,
++                    (Double(done) + fraction * Double(part.size)) /
++                        Double(image.downloadSize)
++                )
++            }
++            defer { try? manager.removeItem(at: file) }
++            try Task.checkCancellation()
++            phase = .working("Unpacking", Double(done + part.size) / Double(image.downloadSize))
++            try await Task.detached(priority: .userInitiated) {
++                try writer.consume(part: file, expecting: part.sha256)
++            }.value
++            try Task.checkCancellation()
++            done += part.size
++        }
++        try writer.finish(expecting: image.sha256)
++
++        // A reinstalled system starts clean: its old writable disk would lay
++        // the previous system's files over the new one.
++        let overlay = try OverlayDisk.location(for: image.file)
++        try? manager.removeItem(at: overlay)
++        try account.setupFile.write(
++            to: OverlayDisk.setupFile(beside: overlay),
++            options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
++        )
++        try? manager.removeItem(at: destination)
++        try manager.moveItem(at: partial, to: destination)
++        var stored = destination
++        var values = URLResourceValues()
++        values.isExcludedFromBackup = true
++        try? stored.setResourceValues(values)
++
++        var configuration = EmulatorConfiguration.load()
++        configuration.rootfsFilename = image.file
++        configuration.save()
++    }
++
++    /// Downloads one file to a temporary location, reporting its fraction.
++    private func fetch(
++        _ url: URL, progress: @escaping (Double) -> Void
++    ) async throws -> URL {
++        let kept = FileManager.default.temporaryDirectory
++            .appendingPathComponent("berkut-part-\(UUID().uuidString)")
++        let box = DownloadBox()
++        let reporter = Task {
++            while !Task.isCancelled {
++                if let fraction = box.task?.progress.fractionCompleted {
++                    progress(fraction)
++                }
++                try? await Task.sleep(for: .milliseconds(300))
++            }
++        }
++        defer { reporter.cancel() }
++        return try await withTaskCancellationHandler {
++            try await withCheckedThrowingContinuation { continuation in
++                let task = URLSession.shared.downloadTask(with: url) {
++                    file, response, error in
++                    do {
++                        if let error { throw error }
++                        guard let file,
++                              (response as? HTTPURLResponse)?.statusCode == 200 else {
++                            throw InstallError(message: "The download failed.")
++                        }
++                        // The system deletes `file` when this handler returns.
++                        try FileManager.default.moveItem(at: file, to: kept)
++                        continuation.resume(returning: kept)
++                    } catch {
++                        continuation.resume(throwing: error)
++                    }
++                }
++                box.task = task
++                task.resume()
++            }
++        } onCancel: {
++            box.task?.cancel()
++        }
++    }
++}
++
++nonisolated private final class DownloadBox: @unchecked Sendable {
++    private let lock = NSLock()
++    private var stored: URLSessionDownloadTask?
++    var task: URLSessionDownloadTask? {
++        get { lock.withLock { stored } }
++        set { lock.withLock { stored = newValue } }
++    }
++}
++
++/// Pick a distribution and desktop, name the account, install.
++struct SystemInstallerView: View {
++    @ObservedObject private var installer = SystemInstaller.shared
++    @Environment(\.dismiss) private var dismiss
++    @State private var distro = ""
++    @State private var desktop = ""
++    @State private var account = GuestAccount()
++
++    private var distros: [String] {
++        installer.images.map(\.distro).reduce(into: []) {
++            if !$0.contains($1) { $0.append($1) }
++        }
++    }
++
++    private var desktops: [SystemImage] {
++        installer.images.filter { $0.distro == distro }
++    }
++
++    private var selected: SystemImage? {
++        desktops.first { $0.desktop == desktop }
++    }
++
++    var body: some View {
++        NavigationStack {
++            Form {
++                if let problem = installer.catalogProblem {
++                    Section {
++                        Text(problem)
++                        Button("Try again") {
++                            Task { await installer.loadCatalog() }
++                        }
++                    }
++                } else if installer.images.isEmpty {
++                    Section { ProgressView("Loading systems") }
++                } else {
++                    Section("System") {
++                        Picker("Distribution", selection: $distro) {
++                            ForEach(distros, id: \.self) { name in
++                                Text(installer.images.first { $0.distro == name }?
++                                    .distroName ?? name).tag(name)
++                            }
++                        }
++                        Picker("Desktop", selection: $desktop) {
++                            ForEach(desktops) {
++                                Text($0.desktopName).tag($0.desktop)
++                            }
++                        }
++                        if let selected {
++                            LabeledContent(
++                                "Download",
++                                value: ByteCountFormatter.string(
++                                    fromByteCount: selected.downloadSize,
++                                    countStyle: .file
++                                )
++                            )
++                        }
++                    }
++                    Section {
++                        TextField("Username", text: $account.username)
++                            .textInputAutocapitalization(.never)
++                            .autocorrectionDisabled()
++                        SecureField("Password", text: $account.password)
++                            .textInputAutocapitalization(.never)
++                            .autocorrectionDisabled()
++                        TextField("Computer name", text: $account.hostname)
++                            .textInputAutocapitalization(.never)
++                            .autocorrectionDisabled()
++                    } header: {
++                        Text("Your account")
++                    } footer: {
++                        Text(account.problem ?? "Created at the first start. It can use sudo. The root password is root.")
++                    }
++                    Section {
++                        status
++                    } footer: {
++                        Text("Keep Berkut open while it downloads. Reinstalling a system erases its files.")
++                    }
++                }
++            }
++            .navigationTitle("Install a system")
++            .navigationBarTitleDisplayMode(.inline)
++            .toolbar {
++                ToolbarItem(placement: .cancellationAction) {
++                    Button("Close") { dismiss() }
++                }
++            }
++        }
++        .interactiveDismissDisabled(installer.isWorking)
++        .task {
++            if installer.images.isEmpty { await installer.loadCatalog() }
++        }
++        .onChange(of: installer.images, initial: true) {
++            if distro.isEmpty { distro = distros.first ?? "" }
++        }
++        .onChange(of: distro, initial: true) {
++            if selected == nil { desktop = desktops.first?.desktop ?? "" }
++        }
++    }
++
++    @ViewBuilder
++    private var status: some View {
++        switch installer.phase {
++        case let .working(label, fraction):
++            ProgressView(value: min(max(fraction, 0), 1)) { Text(label) }
++            Button("Cancel download", role: .destructive) { installer.cancel() }
++        case .installed:
++            Label("Installed. Close Berkut (swipe it away) and open it again.",
++                  systemImage: "checkmark.circle")
++            installButton
++        case let .failed(message):
++            Label(message, systemImage: "exclamationmark.triangle")
++            installButton
++        case .idle:
++            installButton
++        }
++    }
++
++    private var installButton: some View {
++        Button("Install") {
++            if let selected { installer.install(selected, account: account) }
++        }
++        .disabled(selected == nil || account.problem != nil)
++    }
++}
+diff --git a/Kernarium/Runtime/KernariumRuntime.mm b/Kernarium/Runtime/KernariumRuntime.mm
+index 99911c4bc..2450fd446 100644
+--- a/Kernarium/Runtime/KernariumRuntime.mm
++++ b/Kernarium/Runtime/KernariumRuntime.mm
+@@ -1391,7 +1391,8 @@ class RunInitrd final {
+ public:
+     /* `payload` is a padded newc segment appended after the runtime's own,
+      * whose files replace the runtime's. */
+-    RunInitrd(bool ext4Image, std::span<const std::byte> payload)
++    RunInitrd(bool ext4Image, std::span<const std::byte> payload,
++        const std::string& setupFile = {})
+     {
+         const std::filesystem::path directory {
+             NSTemporaryDirectory().fileSystemRepresentation};
+@@ -1429,6 +1430,12 @@ public:
+             std::as_bytes(std::span {parameters.data(), parameters.size()}),
+             0644,
+             0);
++        /* Berkut: the account an installed system creates at its first boot,
++         * which /init copies into the writable layer. */
++        if (!setupFile.empty() && std::filesystem::exists(setupFile)) {
++            archive.addHostFile(
++                "/payload/etc/berkut/setup.conf", setupFile, 0600);
++        }
+         auto initrd = uml::boot::composeInitrd(
+             std::as_bytes(std::span {
+                 uml_boot_base_start,
+@@ -2666,7 +2673,8 @@ int runtimeRun(
+                 ? automation->systemdUnit()
+                 : std::string {"graphical.target"};
+ #else
+-            const RunInitrd initrd {request.derivativeRootfs, {}};
++            const RunInitrd initrd {request.derivativeRootfs, {},
++                request.overlayPath + ".setup"};
+             request.systemdUnit = "graphical.target";
+ #endif
+             request.initrdArgument = initrd.kernelArgument();
+-- 
+2.56.1
+
