@@ -21,10 +21,12 @@ echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 getent group wheel >/dev/null || groupadd -r wheel
 
-# SDDM on Wayland: the images have no X server except Xfce's. KWin draws the
-# greeter where it is installed, SDDM's default (weston) elsewhere.
-printf '%s\n' '[General]' 'DisplayServer=wayland' > /etc/sddm.conf.d/10-wayland.conf
-if command -v kwin_wayland >/dev/null; then
+# SDDM on X11 for Xfce, an X session; on Wayland elsewhere, where there is no
+# X server. KWin draws the greeter where it is installed, weston elsewhere.
+display=wayland
+[ "$DE" != xfce ] || display=x11
+printf '%s\n' '[General]' "DisplayServer=$display" > /etc/sddm.conf.d/10-wayland.conf
+if [ "$display" = wayland ] && command -v kwin_wayland >/dev/null; then
 	printf '%s\n' 'GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell' '' '[Wayland]' \
 		'CompositorCommand=kwin_wayland --drm --no-lockscreen --no-global-shortcuts --locale1' \
 		>> /etc/sddm.conf.d/10-wayland.conf
@@ -52,9 +54,11 @@ plasma|plasma-mobile)
 esac
 install -d /etc/skel/.local/share/sddm
 
-# Phosh's dependencies bring GNOME Shell's login session, which the greeter
-# would offer first.
-[ "$DE" != phosh ] || rm -f /usr/share/wayland-sessions/gnome*.desktop
+# One session only. Dependencies bring others (Weston, which draws the greeter,
+# GNOME under Phosh), and the greeter would offer them first.
+for f in /usr/share/wayland-sessions/*.desktop /usr/share/xsessions/*.desktop; do
+	[ ! -e "$f" ] || [ "$f" = "$session_dir/$DE.desktop" ] || rm -f "$f"
+done
 
 # The console is the serial line; gettys on the VTs can steal them from SDDM.
 systemctl mask getty@tty0.service getty@tty1.service
