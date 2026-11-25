@@ -1,4 +1,4 @@
-From 3e23050735066cc47057f17baae8d946f1acf529 Mon Sep 17 00:00:00 2001
+From ac56ed536a33754b30633a01322501f863cb16f3 Mon Sep 17 00:00:00 2001
 From: vgs499p <vgs499p@users.noreply.github.com>
 Date: Wed, 25 Nov 2026 17:09:32 -0300
 Subject: [PATCH] Install guest systems from the project's releases
@@ -12,9 +12,9 @@ runtime copies an account file found beside the overlay into the guest.
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 ---
  Kernarium/Kernarium/ContentView.swift     |  81 +++-
- Kernarium/Kernarium/SystemInstaller.swift | 482 ++++++++++++++++++++++
+ Kernarium/Kernarium/SystemInstaller.swift | 483 ++++++++++++++++++++++
  Kernarium/Runtime/KernariumRuntime.mm     |  12 +-
- 3 files changed, 552 insertions(+), 23 deletions(-)
+ 3 files changed, 553 insertions(+), 23 deletions(-)
  create mode 100644 Kernarium/Kernarium/SystemInstaller.swift
 
 diff --git a/Kernarium/Kernarium/ContentView.swift b/Kernarium/Kernarium/ContentView.swift
@@ -150,10 +150,10 @@ index bf28f9dcf..7bceab7f7 100644
              print(
 diff --git a/Kernarium/Kernarium/SystemInstaller.swift b/Kernarium/Kernarium/SystemInstaller.swift
 new file mode 100644
-index 000000000..cf6594a0f
+index 000000000..3b32910fb
 --- /dev/null
 +++ b/Kernarium/Kernarium/SystemInstaller.swift
-@@ -0,0 +1,482 @@
+@@ -0,0 +1,483 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +// Berkut: downloads a guest system from the project's releases into Documents.
 +
@@ -190,13 +190,14 @@ index 000000000..cf6594a0f
 +    var desktopName: String {
 +        [
 +            "plasma-mobile": "Plasma Mobile", "phosh": "Phosh",
-+            "plasma": "Plasma Desktop", "xfce": "Xfce", "lomiri": "Lomiri",
++            "plasma": "Plasma Desktop",
 +        ][desktop] ?? desktop
 +    }
 +
 +    /// Whether every name stays a plain file name the launcher accepts.
 +    @MainActor var isWellFormed: Bool {
-+        RootfsImage.validatedFilename(file) != nil && !parts.isEmpty &&
++        ["plasma-mobile", "phosh", "plasma"].contains(desktop) &&
++            RootfsImage.validatedFilename(file) != nil && !parts.isEmpty &&
 +            parts.allSatisfy {
 +                !$0.file.isEmpty && !$0.file.hasPrefix(".") &&
 +                    ($0.file as NSString).lastPathComponent == $0.file
