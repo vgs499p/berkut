@@ -14,7 +14,12 @@ value() { [ -f "$conf" ] && sed -n "s/^$1=//p" "$conf" | head -n 1 || true; }
 user=$(value USERNAME)
 password=$(value PASSWORD)
 host=$(value HOSTNAME)
-[[ $user =~ ^[a-z_][a-z0-9_-]{0,30}$ ]] && ! id "$user" >/dev/null 2>&1 || user=uml
+[[ $user =~ ^[a-z_][a-z0-9_-]{0,30}$ ]] || user=uml
+# An existing ordinary account is this script's own, from a run that did not
+# finish; a system account is never taken over.
+if uid=$(id -u "$user" 2>/dev/null) && [ "$uid" -lt 1000 ]; then
+	user=uml
+fi
 [ -n "$password" ] || password=$user
 [[ $host =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$ ]] || host=
 
@@ -25,7 +30,9 @@ done
 printf '%s:%s\n' "$user" "$password" | chpasswd
 if [ -n "$host" ]; then
 	echo "$host" > /etc/hostname
-	hostname "$host"
+	# Not every image has a hostname command, and the name above applies at
+	# the next boot anyway.
+	echo "$host" 2>/dev/null > /proc/sys/kernel/hostname || true
 fi
 
 printf '%s\n' '[Autologin]' "User=$user" "Session=$(cat /etc/berkut/session)" 'Relogin=false' \

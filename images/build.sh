@@ -59,6 +59,27 @@ fi
 # 3. Pack. Keep real file times: SDDM ignores configuration dated at the epoch.
 NAME=$DISTRO-$DE
 du -sh "$R"
+# Run the first boot on a throwaway layer over the finished root, as it would
+# run with the installer's account file, then once more as after a failed run.
+T=$W/firstboot
+mkdir -p "$T"/{upper,work,root}
+mount -t overlay overlay -o "lowerdir=$R,upperdir=$T/upper,workdir=$T/work" "$T/root"
+mount -t proc proc "$T/root/proc"
+mount --bind /dev "$T/root/dev"
+printf 'USERNAME=tester\nPASSWORD=pass word\nHOSTNAME=testhost\n' > "$T/root/etc/berkut/setup.conf"
+cp "$T/root/etc/berkut/setup.conf" "$T/setup.conf"
+for run in 1 2; do
+	cp "$T/setup.conf" "$T/root/etc/berkut/setup.conf"
+	rm -f "$T/root/etc/berkut/configured"
+	# Its own UTS namespace: the script sets the hostname.
+	unshare --uts chroot "$T/root" /usr/local/bin/berkut-firstboot
+	grep -qx 'User=tester' "$T/root/etc/sddm.conf.d/20-autologin.conf"
+	[ -e "$T/root/etc/berkut/configured" ] && [ ! -e "$T/root/etc/berkut/setup.conf" ]
+	! grep -q '^uml:' "$T/root/etc/passwd"
+done
+umount -R -l "$T/root"
+rm -rf "$T"
+
 mkfs.erofs -zlz4hc,12 -Eztailpacking "$W/$NAME.erofs" "$R" >/dev/null
 rm -rf "$R"
 

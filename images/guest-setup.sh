@@ -52,6 +52,10 @@ plasma|plasma-mobile)
 esac
 install -d /etc/skel/.local/share/sddm
 
+# Phosh's dependencies bring GNOME Shell's login session, which the greeter
+# would offer first.
+[ "$DE" != phosh ] || rm -f /usr/share/wayland-sessions/gnome*.desktop
+
 # The console is the serial line; gettys on the VTs can steal them from SDDM.
 systemctl mask getty@tty0.service getty@tty1.service
 systemctl disable systemd-networkd.service systemd-networkd.socket 2>/dev/null || true
