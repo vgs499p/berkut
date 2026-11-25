@@ -28,7 +28,6 @@ jobs:
           - { distro: fedora, desktop: phosh }
           - { distro: fedora, desktop: plasma }
           - { distro: ubuntu, desktop: phosh }
-          - { distro: ubuntu, desktop: lomiri }
           - { distro: ubuntu, desktop: plasma }
     name: ${{ matrix.distro }}-${{ matrix.desktop }}
     steps:

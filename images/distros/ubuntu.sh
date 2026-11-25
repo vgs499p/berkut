@@ -1,5 +1,5 @@
 # Ubuntu 26.04 LTS, from the ubuntu-base tarball.
-DESKTOPS="phosh lomiri plasma"
+DESKTOPS="phosh plasma"
 SUITE=resolute
 
 fetch_base() {
@@ -29,7 +29,6 @@ install_packages() {
 		fonts-dejavu-core"
 	case $DE in
 	phosh) pkgs+=" phosh phoc squeekboard gnome-console nautilus gnome-control-center" ;;
-	lomiri) pkgs+=" lomiri lomiri-desktop-session lomiri-terminal-app" ;;
 	plasma) pkgs+=" kde-plasma-desktop plasma-nm plasma-pa" ;;
 	esac
 	# Recommends carry the parts of a desktop session that are not hard

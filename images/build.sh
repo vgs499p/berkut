@@ -2,7 +2,7 @@
 # Builds one Berkut guest image. Runs as root on an arm64 Linux host (the
 # GitHub Actions ubuntu-24.04-arm runner) with erofs-utils, zstd, bsdtar,
 # gpg and, for Fedora, docker.
-#   images/build.sh <arch|fedora|ubuntu> <plasma-mobile|phosh|plasma|lomiri> <outdir>
+#   images/build.sh <arch|fedora|ubuntu> <plasma-mobile|phosh|plasma> <outdir>
 set -euxo pipefail
 # A private mount namespace: the runner's mounts are shared, so binds made
 # under the root would otherwise also appear beneath it and end up packed.
