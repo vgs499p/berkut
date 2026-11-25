@@ -1,0 +1,212 @@
+From 74798c0225a990b38bad14cd259e70a14d8d6aeb Mon Sep 17 00:00:00 2001
+From: vgs499p <vgs499p@users.noreply.github.com>
+Date: Wed, 25 Nov 2026 19:14:47 -0300
+Subject: [PATCH] JIT as a setting, time zone, deleting systems, Phosh
+ recommended
+
+The JIT is used only when turned on in settings, since translating each
+new process costs it more than the interpreter. The account file carries
+the host's time zone. The installer lists installed systems and deletes
+one with its writable disk, and selects Phosh by default.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ Kernarium/Kernarium/ContentView.swift         |  5 +-
+ .../Kernarium/EmulatorSettingsView.swift      | 12 +++
+ Kernarium/Kernarium/SystemInstaller.swift     | 91 ++++++++++++++++++-
+ 3 files changed, 104 insertions(+), 4 deletions(-)
+
+diff --git a/Kernarium/Kernarium/ContentView.swift b/Kernarium/Kernarium/ContentView.swift
+index 7bceab7f7..c16493b04 100644
+--- a/Kernarium/Kernarium/ContentView.swift
++++ b/Kernarium/Kernarium/ContentView.swift
+@@ -896,8 +896,11 @@ private func runGuest(
+     // memory request (StikDebug), prepare it and boot on the JIT; otherwise
+     // the guest runs on the interpreter. This runs on the run's own thread,
+     // which may block for the seconds the debugger takes.
++    // Berkut: only when the user turns the setting on. Translating each new
++    // process costs the JIT several times what it costs the interpreter.
+     var useJit = false
+-    if kernarium_runtime_loader_debugger_attached() != 0 {
++    if UserDefaults.standard.bool(forKey: JITSetting.key) &&
++        kernarium_runtime_loader_debugger_attached() != 0 {
+         let answer = kernarium_runtime_loader_prepare_jit(1, guestMemoryMiB, vCPUCount)
+         useJit = answer == Int32(KERNARIUM_RUNTIME_JIT_READY)
+         print("Kernarium: JIT preparation answered \(answer); using JIT: \(useJit)")
+diff --git a/Kernarium/Kernarium/EmulatorSettingsView.swift b/Kernarium/Kernarium/EmulatorSettingsView.swift
+index e722b7d5b..544fc586f 100644
+--- a/Kernarium/Kernarium/EmulatorSettingsView.swift
++++ b/Kernarium/Kernarium/EmulatorSettingsView.swift
+@@ -15,6 +15,7 @@ struct EmulatorSettingsView: View {
+     private let maximumVCPUCount: Int
+     private let defaults: UserDefaults
+     private let rootfsFilenames: [String]
++    @AppStorage(JITSetting.key) private var useJIT = false
+     private let documentsDirectory: URL
+ 
+     /// The most guest RAM the memory limit leaves at the chosen vCPU count.
+@@ -85,6 +86,17 @@ struct EmulatorSettingsView: View {
+         NavigationStack {
+             Form {
+                 Section("Hardware") {
++                    Toggle("Use JIT (StikDebug)", isOn: $useJIT)
++                        .accessibilityIdentifier("jitToggle")
++
++                    Text(
++                        "Off by default. It can speed up long computations " +
++                            "but usually makes starting apps slower. Applies " +
++                            "the next time Berkut starts."
++                    )
++                    .font(.footnote)
++                    .foregroundStyle(.secondary)
++
+                     Toggle("Retina mode", isOn: $configuration.retinaMode)
+                         .accessibilityIdentifier("retinaModeToggle")
+ 
+diff --git a/Kernarium/Kernarium/SystemInstaller.swift b/Kernarium/Kernarium/SystemInstaller.swift
+index 3b32910fb..e4dce66c7 100644
+--- a/Kernarium/Kernarium/SystemInstaller.swift
++++ b/Kernarium/Kernarium/SystemInstaller.swift
+@@ -53,6 +53,11 @@ nonisolated private struct SystemCatalog: Decodable, Sendable {
+     let images: [SystemImage]
+ }
+ 
++/// Whether a boot under a debugger asks for the JIT.
++nonisolated enum JITSetting {
++    static let key = "berkut.useJIT"
++}
++
+ /// The account the guest creates at its first boot.
+ nonisolated struct GuestAccount: Equatable, Sendable {
+     var username = ""
+@@ -77,7 +82,10 @@ nonisolated struct GuestAccount: Equatable, Sendable {
+     }
+ 
+     var setupFile: Data {
+-        Data("USERNAME=\(username)\nPASSWORD=\(password)\nHOSTNAME=\(hostname)\n".utf8)
++        Data(
++            ("USERNAME=\(username)\nPASSWORD=\(password)\n" +
++                "HOSTNAME=\(hostname)\nTIMEZONE=\(TimeZone.current.identifier)\n").utf8
++        )
+     }
+ }
+ 
+@@ -241,6 +249,40 @@ final class SystemInstaller: ObservableObject {
+         task?.cancel()
+     }
+ 
++    /// The systems in Documents, whether downloaded or copied there.
++    func installedSystems() -> [String] {
++        RootfsImage.availableFilenames().filter {
++            ["erofs", "ext4"].contains(($0 as NSString).pathExtension.lowercased())
++        }
++    }
++
++    /// Removes a system, its writable disk and any pending account file.
++    func delete(_ name: String) {
++        guard !isWorking, EmulatorLauncher.shared.runningGuestName != name else {
++            return
++        }
++        let manager = FileManager.default
++        do {
++            try manager.removeItem(
++                at: RootfsImage.documentsDirectory.appendingPathComponent(name)
++            )
++        } catch {
++            phase = .failed("Could not delete \(name): \(error.localizedDescription)")
++            return
++        }
++        if let disk = try? OverlayDisk.location(for: name) {
++            try? manager.removeItem(at: disk)
++            try? manager.removeItem(at: OverlayDisk.setupFile(beside: disk))
++        }
++        phase = .idle
++        var configuration = EmulatorConfiguration.load()
++        if configuration.rootfsFilename == name,
++           let other = installedSystems().first {
++            configuration.rootfsFilename = other
++            configuration.save()
++        }
++    }
++
+     private func download(_ image: SystemImage, account: GuestAccount) async throws {
+         let manager = FileManager.default
+         let documents = RootfsImage.documentsDirectory
+@@ -364,6 +406,8 @@ struct SystemInstallerView: View {
+     @State private var distro = ""
+     @State private var desktop = ""
+     @State private var account = GuestAccount()
++    @State private var installed: [String] = []
++    @State private var doomed: String?
+ 
+     private var distros: [String] {
+         installer.images.map(\.distro).reduce(into: []) {
+@@ -401,7 +445,9 @@ struct SystemInstallerView: View {
+                         }
+                         Picker("Desktop", selection: $desktop) {
+                             ForEach(desktops) {
+-                                Text($0.desktopName).tag($0.desktop)
++                                Text($0.desktop == "phosh"
++                                    ? "\($0.desktopName) (recommended)"
++                                    : $0.desktopName).tag($0.desktop)
+                             }
+                         }
+                         if let selected {
+@@ -435,6 +481,42 @@ struct SystemInstallerView: View {
+                         Text("Keep Berkut open while it downloads. Reinstalling a system erases its files.")
+                     }
+                 }
++                if !installed.isEmpty {
++                    Section {
++                        ForEach(installed, id: \.self) { name in
++                            HStack {
++                                Text(name)
++                                Spacer()
++                                if EmulatorLauncher.shared.runningGuestName == name {
++                                    Text("Running").foregroundStyle(.secondary)
++                                } else {
++                                    Button("Delete", role: .destructive) { doomed = name }
++                                        .buttonStyle(.borderless)
++                                        .disabled(installer.isWorking)
++                                }
++                            }
++                        }
++                    } header: {
++                        Text("Installed")
++                    } footer: {
++                        Text("To delete the running system, pick another in Settings and reopen Berkut.")
++                    }
++                }
++            }
++            .confirmationDialog(
++                "Delete \(doomed ?? "")?",
++                isPresented: Binding(get: { doomed != nil }, set: { if !$0 { doomed = nil } }),
++                titleVisibility: .visible
++            ) {
++                Button("Delete system and its files", role: .destructive) {
++                    if let doomed { installer.delete(doomed) }
++                    installed = installer.installedSystems()
++                }
++            } message: {
++                Text("Everything saved inside it is erased. This cannot be undone.")
++            }
++            .onChange(of: installer.phase, initial: true) {
++                installed = installer.installedSystems()
+             }
+             .navigationTitle("Install a system")
+             .navigationBarTitleDisplayMode(.inline)
+@@ -452,7 +534,10 @@ struct SystemInstallerView: View {
+             if distro.isEmpty { distro = distros.first ?? "" }
+         }
+         .onChange(of: distro, initial: true) {
+-            if selected == nil { desktop = desktops.first?.desktop ?? "" }
++            if selected == nil {
++                desktop = (desktops.first { $0.desktop == "phosh" }
++                    ?? desktops.first)?.desktop ?? ""
++            }
+         }
+     }
+ 
+-- 
+2.56.1
+

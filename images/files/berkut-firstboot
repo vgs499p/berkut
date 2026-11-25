@@ -14,6 +14,7 @@ value() { [ -f "$conf" ] && sed -n "s/^$1=//p" "$conf" | head -n 1 || true; }
 user=$(value USERNAME)
 password=$(value PASSWORD)
 host=$(value HOSTNAME)
+zone=$(value TIMEZONE)
 [[ $user =~ ^[a-z_][a-z0-9_-]{0,30}$ ]] || user=uml
 # An existing ordinary account is this script's own, from a run that did not
 # finish; a system account is never taken over.
@@ -33,6 +34,10 @@ if [ -n "$host" ]; then
 	# Not every image has a hostname command, and the name above applies at
 	# the next boot anyway.
 	echo "$host" 2>/dev/null > /proc/sys/kernel/hostname || true
+fi
+
+if [[ $zone =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ ]] && [ -f "/usr/share/zoneinfo/$zone" ]; then
+	ln -sfn "/usr/share/zoneinfo/$zone" /etc/localtime
 fi
 
 printf '%s\n' '[Autologin]' "User=$user" "Session=$(cat /etc/berkut/session)" 'Relogin=false' \

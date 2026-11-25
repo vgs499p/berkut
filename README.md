@@ -32,7 +32,8 @@ The systems are experimental. On an iPhone 16e, Fedora with Plasma Desktop
 and Arch with Phosh have run; Phosh was much faster than GNOME. The rest are
 untested.
 
-- you choose the username, password and computer name at install time;
+- you choose the username, password and computer name at install time, and the
+  system takes the iPhone's time zone;
 - everything written in a system persists, each on its own storage disk;
 - the iPhone's battery shows in the guest, and NetworkManager the connection;
 - `berkut-logs` and `berkut-reset` for when things go wrong.
@@ -45,7 +46,7 @@ are slow.
 Berkut is a build of
 [Kernarium](https://github.com/imxieyi/Kernarium): a User-mode Linux kernel
 compiled to native arm64 and run inside an iOS app, with guest programs on an
-interpreter (or a JIT under StikDebug) and graphics through Virgl, Zink and
+interpreter (or, if turned on in settings, a JIT under StikDebug) and graphics through Virgl, Zink and
 KosmicKrisp to Metal.
 
 This repository holds only what Berkut adds. A build clones upstream
@@ -108,8 +109,8 @@ in the app's `Library/Guest` (sparse, excluded from iCloud backups). Files,
 installed packages and settings are kept across launches and app updates.
 Raising the overlay size in Emulator settings grows the disk at the next
 launch; it never shrinks. As root, `berkut-reset` discards a system's changes
-at the next launch. Reinstalling a system also erases its disk, and deleting
-the app deletes everything.
+at the next launch. Reinstalling a system also erases its disk. The installer
+deletes installed systems, and deleting the app deletes everything.
 
 Updating from 1.0 keeps its Arch system (accounts `uml`/`uml`, `root`/`root`,
 `alarm`/`alarm`) and that system's files.

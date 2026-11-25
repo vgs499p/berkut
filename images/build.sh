@@ -67,7 +67,7 @@ mkdir -p "$T"/{upper,work,root}
 mount -t overlay overlay -o "lowerdir=$R,upperdir=$T/upper,workdir=$T/work" "$T/root"
 mount -t proc proc "$T/root/proc"
 mount --bind /dev "$T/root/dev"
-printf 'USERNAME=tester\nPASSWORD=pass word\nHOSTNAME=testhost\n' > "$T/root/etc/berkut/setup.conf"
+printf 'USERNAME=tester\nPASSWORD=pass word\nHOSTNAME=testhost\nTIMEZONE=America/Sao_Paulo\n' > "$T/root/etc/berkut/setup.conf"
 cp "$T/root/etc/berkut/setup.conf" "$T/setup.conf"
 for run in 1 2; do
 	cp "$T/setup.conf" "$T/root/etc/berkut/setup.conf"
@@ -75,6 +75,7 @@ for run in 1 2; do
 	# Its own UTS namespace: the script sets the hostname.
 	unshare --uts chroot "$T/root" /usr/local/bin/berkut-firstboot
 	grep -qx 'User=tester' "$T/root/etc/sddm.conf.d/20-autologin.conf"
+	[ "$(readlink "$T/root/etc/localtime")" = /usr/share/zoneinfo/America/Sao_Paulo ]
 	[ -e "$T/root/etc/berkut/configured" ] && [ ! -e "$T/root/etc/berkut/setup.conf" ]
 	! grep -q '^uml:' "$T/root/etc/passwd"
 done

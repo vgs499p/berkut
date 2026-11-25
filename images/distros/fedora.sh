@@ -4,7 +4,7 @@ DESKTOPS="plasma-mobile phosh plasma"
 fetch_base() {
 	local pkgs="fedora-release filesystem bash coreutils systemd systemd-udev systemd-resolved
 		dbus-broker sudo passwd shadow-utils util-linux dnf nano htop fastfetch
-		glibc-langpack-en sddm weston NetworkManager upower pipewire pipewire-pulseaudio
+		glibc-langpack-en tzdata sddm weston NetworkManager upower pipewire pipewire-pulseaudio
 		wireplumber mesa-dri-drivers mesa-vulkan-drivers google-noto-sans-fonts
 		google-noto-color-emoji-fonts dejavu-sans-fonts"
 	case $DE in

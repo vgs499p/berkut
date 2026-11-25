@@ -25,7 +25,7 @@ install_packages() {
 	apt-get -y dist-upgrade
 	local pkgs="systemd-sysv udev dbus-user-session libpam-systemd systemd-resolved sudo nano htop
 		locales sddm weston network-manager upower pipewire pipewire-pulse wireplumber
-		libgl1-mesa-dri libegl-mesa0 mesa-vulkan-drivers fonts-noto-core fonts-noto-color-emoji
+		tzdata libgl1-mesa-dri libegl-mesa0 mesa-vulkan-drivers fonts-noto-core fonts-noto-color-emoji
 		fonts-dejavu-core"
 	case $DE in
 	phosh) pkgs+=" phosh phoc squeekboard gnome-console nautilus gnome-control-center" ;;
