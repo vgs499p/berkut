@@ -33,6 +33,13 @@ fi
 install -m 0644 "$F/59-kernarium-input.rules" /etc/udev/rules.d/
 rm -f /usr/share/vulkan/icd.d/lvp_icd*.json
 
+# Ubuntu's NetworkManager leaves wired links alone unless netplan hands them
+# over; the guest's only link is wired. An empty file of the same name masks it.
+if [ -e /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf ]; then
+	install -d /etc/NetworkManager/conf.d
+	: > /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
+fi
+
 # Slow-machine defaults, copied into the home directory at first boot.
 case $DE in
 plasma|plasma-mobile)

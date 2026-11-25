@@ -45,6 +45,11 @@ chroot "$R" /usr/bin/env -i HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/
 	". /root/berkut/$DISTRO.sh; install_packages; . /root/berkut/guest-setup.sh; clean_packages"
 rm -rf "$R/root/berkut"
 ln -sfn /run/systemd/resolve/stub-resolv.conf "$R/etc/resolv.conf"
+# What every boot needs: the init the boot ramdisk starts, and the services.
+chroot "$R" /bin/sh -c 'test -x /sbin/init'
+for unit in sddm.service NetworkManager.service berkut-firstboot.service; do
+	systemctl --root="$R" is-enabled "$unit"
+done
 umount -R -l "$R"
 if findmnt -rn -o TARGET | grep -q "^$R"; then
 	echo "mounts remain under $R"; findmnt -rn -o TARGET | grep "^$R"; exit 1
